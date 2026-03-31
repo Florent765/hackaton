@@ -34,10 +34,10 @@ TEAMMATE_2=""
 TEAMMATE_3=""
 
 # Your personal folder in $SCRATCH (created first, locked to you + team)
-YOUR_FOLDER="test"   # <-- replace with your username or custom name
+YOUR_FOLDER=""   # <-- replace with your username or custom name
 
 # Team folder inside your folder (shared with teammates) 
-TEAM_FOLDER="team_cispa" # <-- replace with your team_name
+TEAM_FOLDER="" # <-- replace with your team_name
 
 # HuggingFace datasets to download (org/repo format)
 HF_DATASETS=(
@@ -113,6 +113,7 @@ else
     _ok "Created $YOUR_FOLDER"
 fi
 
+
 if [[ -d "$TEAM_DIR" ]]; then
     _warn "Team folder $TEAM_FOLDER already exists. Skipping mkdir."
 else
@@ -120,15 +121,12 @@ else
     _ok "Created $TEAM_FOLDER inside $YOUR_FOLDER."
 fi
 
-mkdir -p "$TEAM_DIR/output"
-_ok "Created output/ for SLURM logs."
+chmod g+s "$YOUR_DIR"
 
 # -------------------------------------------------------------
 # STEP 4: Set ACLs — owner + teammates get full access
 # -------------------------------------------------------------
-# -------------------------------------------------------------
-# STEP 4: Set ACLs on owner folder — owner + teammates only
-# -------------------------------------------------------------
+
 _log "Step 4/6 - Setting ACLs on $YOUR_DIR ..."
 
 _lock_down_tree() {
