@@ -1,5 +1,5 @@
 #!/bin/bash
-# source teammate_setup.sh
+# source teammate.sh
 
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -13,14 +13,14 @@ _warn()  { echo -e "${YELLOW}[WARN]${NC}  $1"; }
 _error() { echo -e "${RED}[ERROR]${NC} $1"; }
 
 if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
-    _error "This script must be sourced: source teammate_setup.sh"
+    _error "This script must be sourced: source teammate.sh"
     exit 1
 fi
 
 # configuration
-OWNER="shah3"
+OWNER=""    # <-- replace with your username of the person who ran hackathon_setup.sh before this
 PROJECT_NAME="training2614"
-TEAM_FOLDER="team_cispa"
+TEAM_FOLDER="" # <-- replace with your team_name as done by OWNER
 WRITE_TO_BASHRC="yes"
 
 SCRATCH_BASE="/p/scratch/$PROJECT_NAME"
@@ -69,3 +69,68 @@ _ok "Shared environment variables exported in current shell."
 if [[ "$WRITE_TO_BASHRC" == "yes" ]]; then
     if grep -q "TEAM SHARED UV/HF CONFIG: $TEAM_DIR" ~/.bashrc 2>/dev/null; then
         _warn "Shared config already present in ~/.bashrc"
+    else
+        cat << EOF >> ~/.bashrc
+
+# TEAM SHARED UV/HF CONFIG: $TEAM_DIR
+export PATH="\$HOME/.local/bin:\$PATH"
+export UV_CACHE_DIR=$UV_BASE/cache
+export UV_TOOL_DIR=$UV_BASE/tools
+export UV_PYTHON_INSTALL_DIR=$UV_BASE/python
+export HF_HOME=$HF_CACHE
+export HUGGINGFACE_HUB_CACHE=$HF_CACHE/hub
+EOF
+        _ok "Shared config written to ~/.bashrc"
+    fi
+fi
+
+_log "Step 4/4 - Checking access to shared folder and uv..."
+
+if [[ ! -d "$TEAM_DIR" ]]; then
+    _error "Shared team folder does not exist: $TEAM_DIR"
+    return 1
+fi
+
+if [[ ! -r "$TEAM_DIR" || ! -x "$TEAM_DIR" ]]; then
+    _error "You do not have proper access to: $TEAM_DIR"
+    return 1
+fi
+
+_ok "You can access the shared team folder."
+
+if command -v uv &> /dev/null; then
+    _ok "uv found: $(uv --version 2>&1)"
+else
+    _warn "uv is not available in your shell. Installing for this user..."
+
+    curl -LsSf https://astral.sh/uv/install.sh | sh
+
+    if [[ -f "$HOME/.local/bin/env" ]]; then
+        source "$HOME/.local/bin/env"
+    fi
+
+    export PATH="$HOME/.local/bin:$PATH"
+
+    if command -v uv &> /dev/null; then
+        _ok "uv installed: $(uv --version 2>&1)"
+    else
+        _error "uv installation seems to have failed."
+        echo "Run these manually:"
+        echo "curl -LsSf https://astral.sh/uv/install.sh | sh"
+        echo "source \$HOME/.local/bin/env"
+        return 1
+    fi
+fi
+
+echo ""
+echo "============================================="
+echo -e "${GREEN}   Teammate shell setup complete!${NC}"
+echo "============================================="
+echo ""
+echo "Use the shared folder with:"
+echo "  cd $TEAM_DIR/<dataset-name>"
+echo "  source .venv/bin/activate"
+echo ""
+echo "Or run directly:"
+echo "  uv run $TEAM_DIR/<dataset-name>/main.py"
+echo ""
