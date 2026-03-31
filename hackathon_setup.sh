@@ -281,6 +281,13 @@ PYEOF
         _ok "  Downloaded $dataset_name."
     fi
 
+    # create output folder safely (always run)
+    mkdir -p "$dest/output"
+    
+    # fix mask so both users can write
+    setfacl -m m:rwx "$dest/output"
+    setfacl -d -m m:rwx "$dest/output"
+
     # 2. Create proper per-task uv project + venv from requirements.txt
     if [[ -d "$VENV_DIR" ]]; then
         _warn "  Venv already exists. Skipping."
