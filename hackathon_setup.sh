@@ -174,6 +174,9 @@ for uname in "$OWNER" "${TEAMMATES[@]}"; do
     _ok "  ACL set for $uname"
 done
 
+setfacl -R -m m:rwx "$YOUR_DIR"
+setfacl -R -d -m m:rwx "$YOUR_DIR"
+
 _log "Final ACL for owner folder:"
 getfacl "$YOUR_DIR"
 
