@@ -110,7 +110,7 @@ if [[ -d "$YOUR_FOLDER" ]]; then
     _warn "Folder $YOUR_FOLDER already exists. Skipping mkdir."
 else
     mkdir "$YOUR_FOLDER"
-    _ok "Created $YOUR_FOLDER — left open (no permission restrictions)."
+    _ok "Created $YOUR_FOLDER"
 fi
 
 if [[ -d "$TEAM_DIR" ]]; then
@@ -126,29 +126,60 @@ _ok "Created output/ for SLURM logs."
 # -------------------------------------------------------------
 # STEP 4: Set ACLs — owner + teammates get full access
 # -------------------------------------------------------------
-_log "Step 4/6 - Setting ACLs..."
+# -------------------------------------------------------------
+# STEP 4: Set ACLs on owner folder — owner + teammates only
+# -------------------------------------------------------------
+_log "Step 4/6 - Setting ACLs on $YOUR_DIR ..."
 
-# Block group and others from all future files
-setfacl -m d:g::--- "$TEAM_DIR"
-setfacl -m d:o::--- "$TEAM_DIR"
+_lock_down_tree() {
+    local dir="$1"
 
-_grant_access() {
+    # Restrict the top-level directory itself
+    setfacl -m g::--- "$dir"
+    setfacl -m o::--- "$dir"
+    setfacl -m m:rwx "$dir"
+
+    # Restrict everything that already exists inside
+    setfacl -R -m g::--- "$dir"
+    setfacl -R -m o::--- "$dir"
+    setfacl -R -m m:rwx "$dir"
+
+    # Restrictive defaults for all new files/subdirs
+    setfacl -d -m g::--- "$dir"
+    setfacl -d -m o::--- "$dir"
+    setfacl -d -m m:rwx "$dir"
+
+    # Apply default ACLs to all existing subdirectories too
+    find "$dir" -type d -exec setfacl -d -m g::--- {} \;
+    find "$dir" -type d -exec setfacl -d -m o::--- {} \;
+    find "$dir" -type d -exec setfacl -d -m m:rwx {} \;
+}
+
+_grant_user_access() {
     local uname="$1"
     local dir="$2"
-    setfacl -m    u:"$uname":rwx "$dir"     # current folder
-    setfacl -d   -m u:"$uname":rwx "$dir"   # future files inherit
-    setfacl -R   -m u:"$uname":rwx "$dir"   # all existing files/subdirs
-    setfacl -R -d -m u:"$uname":rwx "$dir"  # future files in subdirs
-    setfacl -R   -m m:rwx "$dir"            # fix mask so writes aren't blocked
+
+    # Current directory + existing tree
+    setfacl -m u:"$uname":rwx "$dir"
+    setfacl -R -m u:"$uname":rwx "$dir"
+
+    # Default ACLs for future files/subdirs
+    setfacl -d -m u:"$uname":rwx "$dir"
+    find "$dir" -type d -exec setfacl -d -m u:"$uname":rwx {} \;
 }
+
+_lock_down_tree "$YOUR_DIR"
 
 for uname in "$OWNER" "${TEAMMATES[@]}"; do
     _log "  Granting access to: $uname"
-    _grant_access "$uname" "$TEAM_DIR"
+    _grant_user_access "$uname" "$YOUR_DIR"
     _ok "  ACL set for $uname"
 done
 
-_log "Final ACL:"
+_log "Final ACL for owner folder:"
+getfacl "$YOUR_DIR"
+
+_log "Final ACL for team folder:"
 getfacl "$TEAM_DIR"
 
 # -------------------------------------------------------------
