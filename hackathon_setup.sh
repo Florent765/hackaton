@@ -26,10 +26,10 @@ fi
 # =============================================================
 
 # Your JUDOOR username (folder owner)
-OWNER=""
+OWNER=""   # Your Juelich username
 
 # Teammates (1 to 3, leave unused ones blank "")
-TEAMMATE_1=""
+TEAMMATE_1=""  # Your teammates' Juelich usernames. Leave unused as it is
 TEAMMATE_2=""
 TEAMMATE_3=""
 
