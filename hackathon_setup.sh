@@ -41,7 +41,8 @@ TEAM_FOLDER="" # <-- replace with your team_name
 
 # HuggingFace datasets to download (org/repo format)
 HF_DATASETS=(
-    "maitri01/llm_watermark_removal"
+    "SprintML/llm_watermark_removal"
+    "SprintML/Property_Inference"
     ""
 )
 
