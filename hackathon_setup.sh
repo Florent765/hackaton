@@ -43,7 +43,7 @@ TEAM_FOLDER="" # <-- replace with your team_name
 HF_DATASETS=(
     "SprintML/llm_watermark_removal"
     "SprintML/Property_Inference"
-    ""
+    "SprintML/Tabular_Attribute_Inference"
 )
 
 # =============================================================
