@@ -12,7 +12,7 @@
 # =============================================================
 
 OWNER=""    # <-- replace with your team_lead username from Juelich
-TEAM_FOLDER="" # <-- replace with your team_name as done by OWNER
+TEAM_FOLDER="" # <-- replace with your team_name as done by team_lead
 
 # =============================================================
 
