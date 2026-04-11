@@ -1,6 +1,8 @@
 #!/bin/bash
 # =============================================================
+# Only team lead has to run the setup script.
 # Hackathon Full Environment Setup Script
+# This creates shared folders, set permissions, download datasets, and prepare environments.
 # Make changes in CONFIGURATION section before running
 # Run with: source hackathon_setup.sh
 # =============================================================
@@ -34,7 +36,7 @@ TEAMMATE_2=""
 TEAMMATE_3=""
 
 # Your personal folder in $SCRATCH (created first, locked to you + team)
-YOUR_FOLDER=""   # <-- replace with your username or custom name
+YOUR_FOLDER=""   # <-- replace with your username
 
 # Team folder inside your folder (shared with teammates) 
 TEAM_FOLDER="" # <-- replace with your team_name
