@@ -1,5 +1,9 @@
 #!/bin/bash
-# source teammate.sh
+# =============================================================
+# Hackathon Setup each for teammates
+# Make changes in CONFIGURATION section before running
+# Run with: source teammate.sh
+# =============================================================
 
 RED='\033[0;31m'
 GREEN='\033[0;32m'
