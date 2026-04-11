@@ -1,8 +1,19 @@
 #!/bin/bash
 # =============================================================
 # Hackathon Setup each for teammates
-# Make changes in CONFIGURATION section before running
+# Make changes in CONFIGURATION section below before running this script:
+# 1) for property OWNER: add your team lead user name from Juelich
+# 2) for property TEAM_FOLDER: add your team name (exactly same what the team_leader added in hackathon_setup.sh) 
 # Run with: source teammate.sh
+# =============================================================
+
+# =============================================================
+# CONFIGURATION — edit before running
+# =============================================================
+
+OWNER=""    # <-- replace with your team_lead username from Juelich
+TEAM_FOLDER="" # <-- replace with your team_name as done by OWNER
+
 # =============================================================
 
 RED='\033[0;31m'
@@ -21,11 +32,10 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
     exit 1
 fi
 
-# configuration
-OWNER=""    # <-- replace with your username of the person who ran hackathon_setup.sh before this
 PROJECT_NAME="training2614"
-TEAM_FOLDER="" # <-- replace with your team_name as done by OWNER
 WRITE_TO_BASHRC="yes"
+
+# =============================================================
 
 SCRATCH_BASE="/p/scratch/$PROJECT_NAME"
 TEAM_DIR="$SCRATCH_BASE/$OWNER/$TEAM_FOLDER"
