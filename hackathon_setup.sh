@@ -1,9 +1,11 @@
 #!/bin/bash
 # =============================================================
-# Only team lead has to run the setup script.
-# Hackathon Full Environment Setup Script
+# Only team lead has to configure and run the setup script.
+# This is the Hackathon Full Environment Setup Script.
 # This creates shared folders, set permissions, download datasets, and prepare environments.
-# Make changes in CONFIGURATION section before running
+# Make changes in CONFIGURATION section below before running this script:
+# 1) for property OWNER: add your user name from Juelich (as a team lead) and add the user names of your teammates
+# 2) create the team folder using the team lead username
 # Run with: source hackathon_setup.sh
 # =============================================================
 
