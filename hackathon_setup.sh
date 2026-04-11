@@ -9,22 +9,6 @@
 # Run with: source hackathon_setup.sh
 # =============================================================
 
-RED='\033[0;31m'
-GREEN='\033[0;32m'
-YELLOW='\033[1;33m'
-BLUE='\033[0;34m'
-NC='\033[0m'
-
-_log()   { echo -e "${BLUE}[INFO]${NC}  $1"; }
-_ok()    { echo -e "${GREEN}[OK]${NC}    $1"; }
-_warn()  { echo -e "${YELLOW}[WARN]${NC}  $1"; }
-_error() { echo -e "${RED}[ERROR]${NC} $1"; }
-
-if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
-    _error "This script must be sourced: source hackathon_setup.sh"
-    exit 1
-fi
-
 # =============================================================
 # CONFIGURATION — edit before running
 # =============================================================
@@ -42,6 +26,25 @@ YOUR_FOLDER=""   # <-- replace with your username
 
 # Team folder inside your folder (shared with teammates) 
 TEAM_FOLDER="" # <-- replace with your team_name
+
+# =============================================================
+
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+BLUE='\033[0;34m'
+NC='\033[0m'
+
+_log()   { echo -e "${BLUE}[INFO]${NC}  $1"; }
+_ok()    { echo -e "${GREEN}[OK]${NC}    $1"; }
+_warn()  { echo -e "${YELLOW}[WARN]${NC}  $1"; }
+_error() { echo -e "${RED}[ERROR]${NC} $1"; }
+
+if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
+    _error "This script must be sourced: source hackathon_setup.sh"
+    exit 1
+fi
+
 
 # HuggingFace datasets to download (org/repo format)
 HF_DATASETS=(
