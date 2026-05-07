@@ -48,14 +48,14 @@ fi
 
 # HuggingFace datasets to download (org/repo format)
 HF_DATASETS=(
-    "SprintML/llm_watermark_removal"
+    "SprintML/llm-watermark-detection"
     "SprintML/Property_Inference"
     "SprintML/Tabular_Attribute_Inference"
 )
 
 # =============================================================
 
-SCRATCH_BASE="/p/scratch/training2614"
+SCRATCH_BASE="/p/scratch/training2615"
 YOUR_DIR="$SCRATCH_BASE/$YOUR_FOLDER"
 TEAM_DIR="$YOUR_DIR/$TEAM_FOLDER"
 
@@ -96,13 +96,13 @@ _ok "jutil found — on JURECA."
 # -------------------------------------------------------------
 # STEP 2: Activate project
 # -------------------------------------------------------------
-_log "Step 2/6 - Activating project training2614..."
+_log "Step 2/6 - Activating project training2615..."
 
-jutil env activate -p training2614
+jutil env activate -p training2615
 
 if [[ -z "$PROJECT" ]]; then
     _error "\$PROJECT empty after activation."
-    echo   "       Try manually: jutil env activate -p training2614"
+    echo   "       Try manually: jutil env activate -p training2615"
     return 1
 fi
 _ok "Project activated. \$PROJECT = $PROJECT"
