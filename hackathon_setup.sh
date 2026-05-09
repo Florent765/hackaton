@@ -50,7 +50,7 @@ fi
 HF_DATASETS=(
     "SprintML/llm-watermark-detection"
     "SprintML/Property_Inference"
-    "SprintML/Tabular_Attribute_Inference"
+    "SprintML/DUCI"
 )
 
 # =============================================================
