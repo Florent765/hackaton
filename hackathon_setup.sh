@@ -48,9 +48,9 @@ fi
 
 # HuggingFace datasets to download (org/repo format)
 HF_DATASETS=(
-    "SprintML/llm-watermark-detection"
-    "SprintML/Property_Inference"
     "SprintML/DUCI"
+    "SprintML/P4Ms-hackathon-vision-task"
+    "SprintML/llm-watermark-detection"
 )
 
 # =============================================================
