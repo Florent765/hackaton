@@ -32,7 +32,7 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
     exit 1
 fi
 
-PROJECT_NAME="training2615"
+PROJECT_NAME="training2625"
 WRITE_TO_BASHRC="yes"
 
 # =============================================================
