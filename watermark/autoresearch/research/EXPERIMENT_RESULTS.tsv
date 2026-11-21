@@ -1,0 +1,3 @@
+exp	vs	seeds	fixed05_ref	fixed05_cand	explor_ref	explor_cand	confirm_ref	confirm_cand	confirm_delta	confirm_ci95	wins_losses	by_method_confirm	cost_s	mem_mb	code	decision
+REF	-	0	0.5002	-	0.5018	-	0.5006	-	-	-	-	-	61	2302	rlib@exp-commit	reference
+E01_signed	REF	0	0.5002	0.4996	0.5018	0.5017	0.5006	0.4993	-0.0013	[-0.0046,+0.0015]	167/135	ps -0.0036 tm -0.0004 ss +0.0000	60	2302	rlib + transform=signed	rejected
