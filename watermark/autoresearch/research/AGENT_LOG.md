@@ -81,6 +81,17 @@ All numbers below were read from the run logs in /p/project1/training2666/jacque
   1200 windows, stride side/2; tasks A04_small_{ps,tm}_tr{0,1}). Seed 0 (A04_small_a65_s0, CMP_A04_small_s0): confirm
   0.5441 vs A04_rect_a65 s0 0.5433, delta +0.0008 CI95 [-0.0029,+0.0046] (ps +0.0016 tm +0.0008). **Rejected** (< +0.003).
 
+- A04_agg_a65 (same 17 window shapes, max + mean + min over covering windows, 51 channels for PS/TM; caches
+  train_{pixelseal,trustmark}_agg_{0,85}.pt from tasks A04_agg_{ps,tm}_tr{0,1}, all finished). Task A04_agg_a65_s0 was
+  queued just before the SSH session to JURECA dropped (connection reset by peer); its result was NOT read; seed 1 was
+  not queued. Status: **not evaluated**.
+
+## Test-split caches (needed by any submission of the A04 models)
+- Done: A01 deep attribution maps (train+test, A01_prep); square crop maps test for TrustMark (A04_prep_tm_te0/1) and
+  PixelSeal (A04_prep_ps_te0/1) -> test_{method}_crops_{0,170}.pt (load_crops merges the chunks).
+- NOT done: non-square 'rect' test maps (8 chunks: prepare_crops_rect.py <method> test {0,85,170,255} {85,170,255,340} rect)
+  and agg test maps. A04_rect_a65 cannot be applied to the test split until these exist.
+
 ## Reproduction (best configuration so far: A04_rect_a65 + N01)
 Remote code root C=/p/project1/training2666/jacquet2/code/experiments (A01, A04 folders = this worktree).
 1. StegaStamp deep attribution caches (train+test): `rq.sh A01_prep A01/prepare_deep.py` (~20 s).
