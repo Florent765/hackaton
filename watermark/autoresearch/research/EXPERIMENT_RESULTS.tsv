@@ -11,3 +11,7 @@ N03_attr	REF	0	0.5002	0.5145	0.5018	0.5170	0.5006	0.5162	+0.0156	[+0.0112,+0.020
 N03_attr_ctrl	REF	0	0.5002	0.4994	0.5018	0.5008	0.5006	0.4993	-0.0013	[-0.0045,+0.0017]	167/166	ps -0.0001 tm +0.0007 ss -0.0046	58	2302	rlib + N03 random-message control	control
 N03_attr	REF	0,1,2	0.5036	0.5174	0.5079	0.5222	0.5047	0.5200	+0.0153	[+0.0109,+0.0201]	174/140	ps -0.0001 tm -0.0018 ss +0.0479	58	2302	rlib + N03 (3 seeds)	confirmed
 N01_kstar(N03_attr)	N03_attr	0,1,2	-	-	0.5222	0.5244	0.5200	0.5231	+0.0031	[+0.0010,+0.0051]	213/297	-	cpu	-	N01 on N03 3 seeds	confirmed (best: N03+N01)
+N03b_true	N03_attr	0	0.5145	-	0.5170	0.5207	0.5162	0.5201	+0.0039	[+0.0006,+0.0073]	203/154	ps +0.0034 tm +0.0084 ss -0.0002	~60	2302	N03 + gxa attribution PS stage32/16, TM layer2/3	promoted to 3 seeds
+N03b_ctrl	N03_attr	0	-	-	0.5170	0.5174	0.5162	0.5173	+0.0010	[-0.0025,+0.0043]	218/150	ps -0.0025 tm +0.0043 ss +0.0013	~60	2302	same, random message	control
+N03b_true	N03_attr	0,1,2	0.5174	0.5202	0.5222	0.5243	0.5200	0.5211	+0.0011	[-0.0016,+0.0038]	229/200	ps -0.0009 tm +0.0041 ss +0.0001	~60	2302	N03b 3 seeds	not confirmed (TM-only part +0.004 consistent: follow-up)
+N01_kstar(N03b_true)	N03b_true	0,1,2	-	-	0.5243	0.5269	0.5211	0.5261	+0.0049	[+0.0028,+0.0072]	227/282	-	cpu	-	N01 on N03b	post-proc confirmed on this base; base gain itself not confirmed
