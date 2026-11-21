@@ -1,5 +1,7 @@
 # Paris Hackathon: JURECA Environment Setup
 
+**Team51 members:** our environment is already set up. Start with the [Team51 hackathon workflow](TEAM_GUIDE.md) for SSH access, Git collaboration, uploading code, GPU jobs, and results.
+
 **TLDR:** The **team lead** runs `hackathon_setup.sh` once. **Every other teammate** runs `teammate.sh` after the lead finishes. On future logins, activate the project rather than repeating initial setup.
 
 This guide explains how to set up and use your team's shared environment on JURECA.
