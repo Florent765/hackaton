@@ -23,7 +23,7 @@ sys.path.insert(0, str(HERE))
 import prepare as P  # noqa: E402
 
 ap = argparse.ArgumentParser()
-ap.add_argument("--queue", default=str(P.TASK_ROOT / "work" / P.USER / "ar_queue"))
+ap.add_argument("--queue", default=os.environ.get("AR_QUEUE", str(P.TASK_ROOT / "work" / P.USER / "ar_queue")))
 ap.add_argument("--timeout", type=int, default=600)
 ap.add_argument("--idle-exit", type=int, default=5400)
 a = ap.parse_args()

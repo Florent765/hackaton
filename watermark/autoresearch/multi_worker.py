@@ -17,7 +17,8 @@ a = ap.parse_args()
 here = Path(__file__).resolve().parent
 visible = [v for v in os.environ.get("CUDA_VISIBLE_DEVICES", "").split(",") if v] or \
           [str(i) for i in range(torch.cuda.device_count())]
-logdir = Path("output") / os.environ.get("USER", "user") / "ar"; logdir.mkdir(parents=True, exist_ok=True)
+logdir = Path(os.environ.get("AR_LOGDIR", Path("output") / os.environ.get("USER", "user") / "ar"))
+logdir.mkdir(parents=True, exist_ok=True)
 jid = os.environ.get("SLURM_JOB_ID", "x")
 procs = []
 for g in visible:
