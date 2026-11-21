@@ -101,3 +101,32 @@ Remote code root C=/p/project1/training2666/jacquet2/code/experiments (A01, A04 
 3. Train: `rq.sh <id> run_exp --exp A04_rect_a65 --seed {0,1,2}`; compare: `common/compare.py N03_attr A04_rect_a65 --seeds 0 1 2`;
    decoding: `N01/eval_n01.py A04_rect_a65 0 1 2`.
 Caches: /p/project1/training2666/jacquet2/research_cache/{A01,A04}/ ; runs: /p/project1/training2666/jacquet2/research/<exp>/.
+
+# Agent #2 (22 Nov 2026, 00:20 onwards) — PAUSED at the user's request; nothing evaluated yet
+
+## A10 — null-calibrated window statistics + test-time rectangle refinement by decoding  [new idea, code ready]
+- Hypothesis: (1) the A04 soft score (mean tanh) scales with logit magnitude, so it is not comparable across window
+  shapes / images. z = S1/sqrt(S2), S1 = sum_k s_k tanh(l_k/4), S2 = sum_k tanh(l_k/4)^2 has mean 0 / variance 1
+  exactly under a random message whatever the logits -> exact per-window null calibration. (2) Treat each window as a
+  hypothesis "watermark = this rectangle": a softmax posterior over windows, and a contrast map (best covering window
+  minus best non-covering window = complement verification), localise better than max-over-covering. (3) In the lo
+  regime (GT-bbox oracle 0.86-0.89) refine the top-4 grid windows by coordinate ascent of z over (t,l,b,r)
+  (edge / shift moves of 48, 24, 12 px) -> decoding-fitted rectangles.
+- Code (wt-agent, uploaded to the home mirror /p/home/jusers/jacquet2/jureca/code/experiments/A10, hashes matched):
+  * A10/prepare_win.py <method> <split> start end -> research_cache/A10/{split}_{method}_win_{start}.pt
+    (same 1757 windows / 17 shapes as A04/prepare_agg.py; s1, s2 per window, refined boxes rbox/rz/rz0; true + random
+    message). Planned chunks of 43 images: train 0/43/86/129 (end 43/86/129/170), test 8 chunks to 340.
+  * A10/exp.py registry: A10_win (A04_rect_a65 + zmax, contrast, posteriors b=0.5/1; 4 ch PS/TM), A10_ref (+ refined
+    box maps rbest/rmix, 6 ch), A10_refonly, A10_zrep (A01_a65 + per-shape z maps REPLACING the A04 soft maps, 17 ch),
+    A10_ref_ctrl (random-message control).
+  * A10/eval_box.py <exp> [seeds]: decoding rule, no retraining: lo-flag images with best refined z > tau get the
+    refined box instead of the N01 mask; tau per method/fold chosen on outer-train images with their INNER predictions
+    (confirmatory); prints box-vs-N01 diagnostics by z bin and the random-message control.
+- Checks done: py_compile only (no local torch). NOT smoke-tested on GPU.
+- Queued (home queue, before the pause; not yet claimed at the time of writing): A10_win_tm_tr0
+  (prepare_win.py trustmark train 0 43), A10_win_ps_tr0 (pixelseal train 0 43). Their run.log will give the timing
+  per chunk (budget: < 600 s) and median refined z true vs ctrl. No other A10 task queued.
+- Results: none (no experiment ran). Decision: pending.
+- Next steps when resumed: read the two run.logs (fix if Traceback); queue the remaining 6 train chunks (<= 2 at a
+  time); run A10_ref s0 and A10_win s0 vs A04_rect_a65 s0 (common/compare.py), A10_ref_ctrl s0; eval_box.py on
+  A04_rect_a65 0 1 2 (needs only the train win caches); promote per protocol; test caches = 8 chunks/method.
