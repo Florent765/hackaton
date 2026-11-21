@@ -9,7 +9,7 @@ Adapted from karpathy/autoresearch: an agent edits one file, runs a fixed-budget
 3. Remote layout (JURECA task root): `work/$USER/ar/baseline.py`, `work/$USER/ar/autoresearch/{prepare,worker}.py`.
    Caches in `work/$USER/ar_cache/` are built by the worker on first start.
 4. `results.tsv` (tab-separated, untracked) with header `commit	val_miou	memory_gb	status	description`.
-5. One worker job: `sbatch --time=04:00:00 ../gpu_job.sh work/$USER/ar/autoresearch/worker.py` (1 node, 1 GPU).
+5. One worker job: `sbatch --time=10:00:00 ../gpu_job.sh work/$USER/ar/autoresearch/worker.py` (1 node, 1 GPU).
 
 ## Experimentation
 - Each experiment: upload `train.py` to `work/$USER/ar_queue/<commit>/train.py`, then create `READY`.

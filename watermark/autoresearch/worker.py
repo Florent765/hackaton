@@ -9,7 +9,7 @@ Protocol (queue dir default work/$USER/ar_queue):
   caches are built by one worker under BUILD.lock while the others wait.
   <queue>/HEARTBEAT_<jobid> is touched every poll; a worker exits after --idle-exit seconds without work.
 Launch from the task root:
-  sbatch --time=04:00:00 ../gpu_job.sh work/$USER/ar/autoresearch/worker.py
+  sbatch --time=10:00:00 ../gpu_job.sh work/$USER/ar/autoresearch/worker.py
 """
 import argparse
 import os
@@ -25,7 +25,7 @@ import prepare as P  # noqa: E402
 ap = argparse.ArgumentParser()
 ap.add_argument("--queue", default=str(P.TASK_ROOT / "work" / P.USER / "ar_queue"))
 ap.add_argument("--timeout", type=int, default=600)
-ap.add_argument("--idle-exit", type=int, default=5400)
+ap.add_argument("--idle-exit", type=int, default=36000)
 a = ap.parse_args()
 Q = Path(a.queue); Q.mkdir(parents=True, exist_ok=True)
 
