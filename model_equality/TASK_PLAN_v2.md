@@ -4,6 +4,8 @@ Status: written 2026-11-21. Supersedes the method sections of `TASK_PLAN.md`; th
 
 **Update after reading the starter kit (2026-11-21):** the reference endpoints have **no query limit** (answers open question 1). All nine are **one family** with model groups S = {ref-01 plain, ref-03 system prompt, ref-05 persona, ref-06 watermark, ref-08 sampling T=1.0}, T1 = ref-02 (fp8), T2/T3/T4 = ref-09/04/07 (LoRA 0.3/0.7/1.5). Step 6 therefore calibrates the model split only; the family split cannot be tuned on references. Answers are sampled by default, so purely greedy endpoints may be rare.
 
+**Implementation note (2026-11-22):** the code departs from the fixed split in steps 6–7 (40 answers up front, 60 in reserve). `cluster.py tune` picks the probes and the number of answers per probe from the references (about 90 answers per endpoint, 10 in reserve), and the threshold uses permutation z-scores. Follow [README.md](README.md) to run it.
+
 What changes from v1, in short:
 
 1. Probes are **forced-choice and random-sequence prompts** designed to expose token-preference bias, not generic tasks.

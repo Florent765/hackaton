@@ -4,6 +4,7 @@
     python query.py run --target ref --repeats 10            # reference endpoints: no limit, safe to repeat
     python query.py run --target scored --types decode --repeats 3 --max-total 3          # dry run: prints plan
     python query.py run --target scored --types decode --repeats 3 --max-total 3 --yes    # spends budget
+    python query.py run --target scored --recommended configs/tuned.json --repeats 3 --max-total 40 --yes
     python query.py reconcile                                # resolve pending/ambiguous scored requests
 
 Rules built in:
@@ -16,6 +17,7 @@ Rules built in:
   * at most 4 requests at once (team-wide cap: make sure nobody else queries at the same time).
 """
 import argparse
+import json
 import sys
 import time
 import uuid
@@ -68,6 +70,11 @@ def plan_jobs(args, budget):
     probes = config.load_probes(args.probes)
     types = set(args.types.split(",")) if args.types else None
     ids = set(args.ids.split(",")) if args.ids else None
+    if args.recommended:
+        rec = json.loads(open(args.recommended, encoding="utf-8").read()).get("recommended_probes") or []
+        if not rec:
+            sys.exit(f"{args.recommended} has no recommended_probes: run `python cluster.py tune` first.")
+        ids = set(rec) if ids is None else ids & set(rec)
     sel = [p for p in probes.values()
            if (types is None or p["type"] in types) and (ids is None or p["id"] in ids)
            and not (args.skip_heldout and p.get("heldout"))]
@@ -233,6 +240,8 @@ def main(argv=None) -> None:
     r.add_argument("--target", choices=["ref", "scored"], required=True)
     r.add_argument("--types", default=None, help="comma list: decode,choice,bits,numbers,greedy_long")
     r.add_argument("--ids", default=None, help="comma list of probe ids")
+    r.add_argument("--recommended", default=None, metavar="CONFIG",
+                   help="only the probes listed in CONFIG's recommended_probes (written by cluster.py tune)")
     r.add_argument("--endpoints", default=None, help="comma list (default: all of the target)")
     r.add_argument("--repeats", type=int, default=1)
     r.add_argument("--max-total", type=int, default=None,

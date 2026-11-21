@@ -1,7 +1,10 @@
 {
-  "weights_family": {"mmd": 1.0, "choice_js": 1.0, "choice_mode": 1.0, "bits_l1": 1.0, "numbers_l1": 1.0},
-  "weights_identity": {"choice_js": 1.0, "choice_mode": 1.0, "bits_l1": 1.0, "numbers_l1": 1.0, "prefix": 1.0, "mmd": 1.0},
+  "weights_family": {"mmd": 1.0, "choice": 1.0, "bits": 1.0, "numbers": 1.0},
+  "weights_identity": {"choice": 1.0, "bits": 1.0, "numbers": 1.0, "prefix": 1.0, "mmd": 1.0},
   "family_threshold": "auto",
-  "identity_threshold": "auto",
-  "heldout": "all"
+  "family_probes": [],
+  "family_probes_example": ["b_bin200", "b_coin150", "n_int10", "c_digit", "c_color"],
+  "identity_threshold": 3.0,
+  "heldout": "all",
+  "recommended_probes": []
 }
