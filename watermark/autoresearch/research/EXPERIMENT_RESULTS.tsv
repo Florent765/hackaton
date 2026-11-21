@@ -1,3 +1,13 @@
 exp	vs	seeds	fixed05_ref	fixed05_cand	explor_ref	explor_cand	confirm_ref	confirm_cand	confirm_delta	confirm_ci95	wins_losses	by_method_confirm	cost_s	mem_mb	code	decision
 REF	-	0	0.5002	-	0.5018	-	0.5006	-	-	-	-	-	61	2302	rlib@exp-commit	reference
 E01_signed	REF	0	0.5002	0.4996	0.5018	0.5017	0.5006	0.4993	-0.0013	[-0.0046,+0.0015]	167/135	ps -0.0036 tm -0.0004 ss +0.0000	60	2302	rlib + transform=signed	rejected
+E04_reproj	REF	0	0.5002	0.4978	0.5018	0.4998	0.5006	0.4969	-0.0037	[-0.0068,-0.0010]	181/198	ps +0.0001 tm +0.0001 ss -0.0114	60	2302	rlib + E04/exp.py (theta inverse warp + validity)	rejected
+E03_evidence	REF	0	0.5002	0.5002	0.5018	0.5019	0.5006	0.5009	+0.0003	[-0.0034,+0.0039]	179/188	ps +0.0010 tm -0.0003 ss +0.0001	59	2308	rlib + E03 (std,q10,Z true message)	rejected
+E03_evidence_ctrl	REF	0	0.5002	0.5014	0.5018	0.5030	0.5006	0.5009	+0.0003	[-0.0033,+0.0038]	177/190	ps +0.0003 tm +0.0006 ss -0.0001	58	2308	rlib + E03 (random message control)	control
+N01_kstar(REF)	REF	0	-	-	0.5018	0.5049	0.5006	0.5032	+0.0026	[+0.0003,+0.0051]	220/284	tm +0.0029 ss +0.0043	cpu	-	N01/eval_n01.py on REF s0	promising
+REF	-	0,1,2	0.5036	-	0.5079	-	0.5047	-	-	-	-	-	59	2302	rlib (3 seeds; reproduces e29 0.5079)	reference
+N01_kstar(REF)	REF	0,1,2	-	-	0.5079	0.5103	0.5047	0.5088	+0.0041	[+0.0018,+0.0067]	209/301	-	cpu	-	N01 on REF 3 seeds	confirmed
+N03_attr	REF	0	0.5002	0.5145	0.5018	0.5170	0.5006	0.5162	+0.0156	[+0.0112,+0.0200]	181/155	ps -0.0001 tm -0.0013 ss +0.0481	58	2302	rlib + N03 exact flatten attribution	promising
+N03_attr_ctrl	REF	0	0.5002	0.4994	0.5018	0.5008	0.5006	0.4993	-0.0013	[-0.0045,+0.0017]	167/166	ps -0.0001 tm +0.0007 ss -0.0046	58	2302	rlib + N03 random-message control	control
+N03_attr	REF	0,1,2	0.5036	0.5174	0.5079	0.5222	0.5047	0.5200	+0.0153	[+0.0109,+0.0201]	174/140	ps -0.0001 tm -0.0018 ss +0.0479	58	2302	rlib + N03 (3 seeds)	confirmed
+N01_kstar(N03_attr)	N03_attr	0,1,2	-	-	0.5222	0.5244	0.5200	0.5231	+0.0031	[+0.0010,+0.0051]	213/297	-	cpu	-	N01 on N03 3 seeds	confirmed (best: N03+N01)

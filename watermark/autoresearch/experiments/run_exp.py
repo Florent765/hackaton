@@ -32,7 +32,7 @@ def resolve(exp):
     if exp in REGISTRY:
         return REGISTRY[exp]()
     # experiment modules may register more ids: experiments/E##/exp.py with REGISTRY = {id: fn}
-    for p in sorted(HERE.glob("E*/exp.py")):
+    for p in sorted(list(HERE.glob("E*/exp.py")) + list(HERE.glob("N*/exp.py"))):
         m = mod(str(p.relative_to(HERE)).replace("\\", "/"))
         if exp in getattr(m, "REGISTRY", {}):
             return m.REGISTRY[exp](cfg)
