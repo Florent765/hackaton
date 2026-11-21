@@ -15,3 +15,6 @@ N03b_true	N03_attr	0	0.5145	-	0.5170	0.5207	0.5162	0.5201	+0.0039	[+0.0006,+0.00
 N03b_ctrl	N03_attr	0	-	-	0.5170	0.5174	0.5162	0.5173	+0.0010	[-0.0025,+0.0043]	218/150	ps -0.0025 tm +0.0043 ss +0.0013	~60	2302	same, random message	control
 N03b_true	N03_attr	0,1,2	0.5174	0.5202	0.5222	0.5243	0.5200	0.5211	+0.0011	[-0.0016,+0.0038]	229/200	ps -0.0009 tm +0.0041 ss +0.0001	~60	2302	N03b 3 seeds	not confirmed (TM-only part +0.004 consistent: follow-up)
 N01_kstar(N03b_true)	N03b_true	0,1,2	-	-	0.5243	0.5269	0.5211	0.5261	+0.0049	[+0.0028,+0.0072]	227/282	-	cpu	-	N01 on N03b	post-proc confirmed on this base; base gain itself not confirmed
+E05_res	N03_attr	0	0.5145	0.5192	0.5170	0.5203	0.5162	0.5175	+0.0012	[-0.0032,+0.0057]	249/223	ps +0.0052 tm +0.0012 ss +0.0037 (explor/confirm mix)	~60	2302	N03 + 10 native residual channels (128 grid)	not promoted (<+0.003)
+E05_grad	N03_attr	0	0.5145	0.5149	0.5170	0.5166	0.5162	0.5157	-0.0005	[-0.0047,+0.0038]	235/248	-	~60	2302	N03 + derivative channels only	control
+E05_shuffled	N03_attr	0	0.5145	0.5119	0.5170	0.5134	0.5162	0.5120	-0.0042	[-0.0086,-0.0000]	229/252	-	~60	2302	N03 + residuals shuffled across images	control
