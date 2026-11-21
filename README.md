@@ -162,7 +162,7 @@ Create `main.sh` in the relevant task directory:
 #SBATCH --nodes=1
 #SBATCH --ntasks-per-node=1
 #SBATCH --gres=gpu:1
-#SBATCH --reservation=cispa-hack
+#SBATCH --reservation=cispahack
 #SBATCH --cpus-per-task=8
 #SBATCH --partition=dc-gpu
 #SBATCH --output=output/%j.out
