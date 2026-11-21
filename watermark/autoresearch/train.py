@@ -114,6 +114,7 @@ def miou_batch(pred, gt):
 
 def main():
     ap = argparse.ArgumentParser(); ap.add_argument("--final", default="")
+    ap.add_argument("--save-oof", default="", help="save out-of-fold probabilities for error analysis")
     a = ap.parse_args()
     t0 = time.time(); torch.cuda.reset_peak_memory_stats()
     oof, thr = {}, {}
@@ -127,6 +128,9 @@ def main():
         sc = {t: float(miou_batch(pr >= t, y).mean()) for t in THRESHOLDS}
         thr[method] = max(sc, key=sc.get)
         oof[method] = (pr >= thr[method]).to(torch.uint8).cpu()
+        if a.save_oof:
+            oof.setdefault("_probs", {})[method] = {"probs": pr.half().cpu(), "names": c["names"], "thr": thr[method],
+                                                    "scalars": c["feats"]["scalars"]}
         print(f"{method}: thr {thr[method]} oof mIoU {sc[thr[method]]:.4f} ({time.time() - t0:.0f}s)", flush=True)
         if a.final:
             ct = P.load_cache(method, "test"); ft = inputs(ct)
@@ -136,6 +140,8 @@ def main():
         del f, y
         torch.cuda.empty_cache()
     res = P.evaluate_oof({m: oof[m] for m in P.METHODS})
+    if a.save_oof:
+        torch.save(oof["_probs"], a.save_oof)
     if a.final:
         names = sum([n for n, _ in oof["_test"]], [])
         masks = torch.cat([m for _, m in oof["_test"]])
