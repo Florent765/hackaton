@@ -28,7 +28,7 @@ def load_win(split, method):
     assert parts, f"no A10 window cache for {split} {method}"
     ps = [torch.load(q, weights_only=False) for q in parts]
     o = {k: torch.cat([q[k] for q in ps]) for k in ps[0] if isinstance(ps[0][k], torch.Tensor) and k not in ("box", "shape_idx")}
-    o["names"] = [n for q in ps for n in q["names"]]; o["box"] = ps[0]["box"]
+    o["names"] = [n for q in ps for n in q["names"]]; o["box"] = ps[0]["box"]; o["shape_idx"] = ps[0]["shape_idx"]
     return o
 
 
@@ -51,6 +51,11 @@ def win_maps(o, suf, chans, dev="cuda"):
         zin = torch.where(cov[None], zi[:, :, None, None], torch.tensor(-1e4, device=dev)).amax(1)
         if "zmax" in chans:
             ch.append(zin / 3)
+        if "zshape" in chans:                      # per window shape (17): max z over covering windows of that shape
+            si = o["shape_idx"].to(dev)
+            for k in range(int(si.max()) + 1):
+                sel = si == k
+                ch.append(torch.where(cov[sel][None], zi[:, sel, None, None], torch.tensor(-1e4, device=dev)).amax(1) / 3)
         if "con" in chans:
             zout = torch.where(cov[None], torch.tensor(-1e4, device=dev), zi[:, :, None, None]).amax(1)
             ch.append(((zin - zout) / 3).clamp(-4, 4))
@@ -74,8 +79,9 @@ GRID = ("zmax", "con", "post0.5", "post1.0")
 REF = ("rbest", "rmix")
 
 
-def make_extra(chans, methods=("pixelseal", "trustmark"), ctrl=False):
-    base_fn = A04.make_extra(A04.ALL, base="a65", rect=True)      # = A04_rect_a65 inputs
+def make_extra(chans, methods=("pixelseal", "trustmark"), ctrl=False, replace=False):
+    # replace=False: on top of the A04_rect_a65 inputs; True: A01_a65 only (the A04 soft crop maps are dropped)
+    base_fn = A04.A01.make_extra(["a6", "a5"]) if replace else A04.make_extra(A04.ALL, base="a65", rect=True)
 
     def extra(c, split):
         out = base_fn(c, split)
@@ -84,7 +90,7 @@ def make_extra(chans, methods=("pixelseal", "trustmark"), ctrl=False):
         o = load_win(split, c["method"])
         assert list(o["names"]) == list(c["names"]), "A10 window maps not aligned"
         x = win_maps(o, "_ctrl" if ctrl else "", chans)
-        out["agree_extra"] = torch.cat([out["agree_extra"], x], 1)
+        out["agree_extra"] = torch.cat([out["agree_extra"], x], 1) if "agree_extra" in out else x
         return out
     return extra
 
@@ -93,5 +99,6 @@ REGISTRY = {
     "A10_win": lambda cfg: (cfg(), make_extra(GRID), None, "A04_rect_a65 + null-calibrated window maps (zmax, contrast, posteriors)"),
     "A10_ref": lambda cfg: (cfg(), make_extra(GRID + REF), None, "A10_win + decoding-refined rectangle maps"),
     "A10_refonly": lambda cfg: (cfg(), make_extra(REF), None, "A04_rect_a65 + decoding-refined rectangle maps only"),
+    "A10_zrep": lambda cfg: (cfg(), make_extra(("zshape",), replace=True), None, "A01_a65 + per-shape z maps replacing the A04 soft crop maps (same 17 window shapes)"),
     "A10_ref_ctrl": lambda cfg: (cfg(), make_extra(GRID + REF, ctrl=True), None, "A10_ref with random-message window stats (control)"),
 }
