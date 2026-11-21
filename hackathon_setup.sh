@@ -56,12 +56,12 @@ fi
 
 # Hugging Face datasets to download (org/repo format)
 HF_DATASETS=(
-    "SprintML/MGI"
-    "SprintML/FL_Data_Reconstruction"
-    "SprintML/watermark_localization"
+    "SprintML/Hackathon_Watermark_Localisation_Task"
+    "SprintML/model_equality"
+    "SprintML/unlearning"
 )
 
-PROJECT_NAME="training2625"
+PROJECT_NAME="training2666"
 SCRATCH_BASE="/p/scratch/$PROJECT_NAME"
 TEAM_LEAD_DIR="$SCRATCH_BASE/$TEAM_LEAD"
 TEAM_DIR="$TEAM_LEAD_DIR/$TEAM_FOLDER"
