@@ -20,8 +20,8 @@
 # =============================================================
 # CONFIGURATION - EACH TEAMMATE EDITS THESE VALUES
 # =============================================================
-TEAM_LEAD=""    # Juelich username of your team lead
-TEAM_FOLDER=""  # Exact team name from the team lead's setup
+TEAM_LEAD="delorme2"    # Juelich username of your team lead
+TEAM_FOLDER="team51"  # Exact team name from the team lead's setup
 # =============================================================
 
 RED='\033[0;31m'
@@ -45,7 +45,7 @@ if [[ -z "$TEAM_LEAD" || -z "$TEAM_FOLDER" || "$TEAM_LEAD" == */* || "$TEAM_FOLD
     return 1
 fi
 
-PROJECT_NAME="training2625"
+PROJECT_NAME="training2666"
 WRITE_TO_BASHRC="yes"
 
 SCRATCH_BASE="/p/scratch/$PROJECT_NAME"

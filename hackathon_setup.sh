@@ -21,11 +21,11 @@
 # =============================================================
 # CONFIGURATION - TEAM LEAD EDITS THESE VALUES
 # =============================================================
-TEAM_LEAD=""    # Your Juelich username
-TEAMMATE_1=""   # Teammate's Juelich username; leave blank if unused
-TEAMMATE_2=""
-TEAMMATE_3=""
-TEAM_FOLDER=""  # Your team name; teammates must use the exact same value
+TEAM_LEAD="delorme2"    # Your Juelich username
+TEAMMATE_1="jacquet2"   # Teammate's Juelich username; leave blank if unused
+TEAMMATE_2="brett2"
+TEAMMATE_3="mondoloni1"
+TEAM_FOLDER="team51"  # Your team name; teammates must use the exact same value
 # =============================================================
 
 RED='\033[0;31m'
