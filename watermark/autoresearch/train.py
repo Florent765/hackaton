@@ -59,11 +59,19 @@ def loss_fn(logits, t, eps=1.0):
     return bce + DICE_W * (1 - d.mean() / 2)
 
 
-def inputs(c):
+def inputs(c, split="train"):
     """Select / transform cached inputs (on GPU, float32)."""
     f = {n: c["feats"][n] for n in c["feature_names"]}
+    occ_path = P.CACHE / f"{split}_{c['method']}_occ.pt"
+    if occ_path.exists():                                   # harness v2: occlusion maps (pixelseal, stegastamp)
+        o = torch.load(occ_path, map_location="cpu", weights_only=False)
+        assert o["names"] == c["names"]
+        d = o["del8"].float()
+        d = (d - d.mean((2, 3), keepdim=True)) / d.std((2, 3), keepdim=True).clamp(min=1e-6)
+        d = F.interpolate(d, size=32, mode="bilinear", align_corners=False)
+        f["agree"] = torch.cat([c["feats"]["agree"].float(), d], 1) if "agree" in c["feats"] else d
     for k in ("agree", "rgb", "scalars"):
-        if k in c["feats"]:
+        if k in c["feats"] and k not in f:
             f[k] = c["feats"][k]
     out = {k: v.to(DEV).float() for k, v in f.items()}
     for n in c["feature_names"]:
@@ -133,7 +141,7 @@ def main():
                                                     "scalars": c["feats"]["scalars"]}
         print(f"{method}: thr {thr[method]} oof mIoU {sc[thr[method]]:.4f} ({time.time() - t0:.0f}s)", flush=True)
         if a.final:
-            ct = P.load_cache(method, "test"); ft = inputs(ct)
+            ct = P.load_cache(method, "test"); ft = inputs(ct, "test")
             pt = sum(probs(fit(f, y, list(range(len(y))), seed=s), ft, list(range(len(ct["names"])))) for s in range(3)) / 3
             oof.setdefault("_test", []).append((ct["names"], (pt >= thr[method]).cpu()))
             del ft
