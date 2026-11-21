@@ -1,0 +1,7 @@
+# raw answers, ledgers, submissions and caches stay out of git
+data/
+submissions/
+*.jsonl
+*.lock
+__pycache__/
+configs/tuned*.json
