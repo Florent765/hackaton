@@ -68,8 +68,8 @@ def inputs(c):
     return {k: v.to(DEV).float() for k, v in f.items()}
 
 
-def fit(f, y, idx):
-    torch.manual_seed(SEED)
+def fit(f, y, idx, seed=SEED):
+    torch.manual_seed(seed)
     maps = {n: f[n].shape[1] for n in f if n not in ("agree", "rgb", "scalars")}
     head = SegHead(maps, f["agree"].shape[1] if "agree" in f else 0).to(DEV)
     opt = torch.optim.AdamW(head.parameters(), lr=LR, weight_decay=WD)
@@ -120,15 +120,14 @@ def main():
         pr = torch.zeros_like(y)
         for k in range(P.K):
             tr = torch.nonzero(fold != k)[:, 0].tolist(); va = torch.nonzero(fold == k)[:, 0].tolist()
-            pr[va] = probs(fit(f, y, tr), f, va)
+            pr[va] = sum(probs(fit(f, y, tr, seed=s), f, va) for s in range(3)) / 3
         sc = {t: float(miou_batch(pr >= t, y).mean()) for t in THRESHOLDS}
         thr[method] = max(sc, key=sc.get)
         oof[method] = (pr >= thr[method]).to(torch.uint8).cpu()
         print(f"{method}: thr {thr[method]} oof mIoU {sc[thr[method]]:.4f} ({time.time() - t0:.0f}s)", flush=True)
         if a.final:
             ct = P.load_cache(method, "test"); ft = inputs(ct)
-            head = fit(f, y, list(range(len(y))))
-            pt = probs(head, ft, list(range(len(ct["names"]))))
+            pt = sum(probs(fit(f, y, list(range(len(y))), seed=s), ft, list(range(len(ct["names"])))) for s in range(3)) / 3
             oof.setdefault("_test", []).append((ct["names"], (pt >= thr[method]).cpu()))
             del ft
         del f, y
