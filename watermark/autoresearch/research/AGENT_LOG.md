@@ -61,3 +61,18 @@ All numbers below were read from the run logs in /p/project1/training2666/jacque
   (+0.0152 [+0.0088,+0.0217]); by method confirm ps +0.0038 ss +0.0003 tm +0.0489; by coverage [0,.05) +0.023,
   [.05,.5) +0.042, [.5,.95) +0.005, [.95,1] +0.001. **Confirmed.**
 - A04_crops_a65 (crops for PS/TM + A01_a65 maps for SS), seeds 0/1/2 confirm 0.5373 / 0.5318 / 0.5319.
+  3 seeds vs N03_attr (CMP_A04_crops_a65_s012): confirm 0.5200 -> 0.5421, delta +0.0221 CI95 [+0.0157,+0.0286],
+  W/L 267/184; explor 0.5222 -> 0.5432 (+0.0209 [+0.0145,+0.0275]); fixed05 0.5174 -> 0.5376 (+0.0202);
+  by method confirm ps +0.0034 ss +0.0164 tm +0.0463. With N01 (N01_A04_crops_a65): confirm 0.5421 -> 0.5464
+  (+0.0043 [+0.0021,+0.0066]); explor 0.5432 -> 0.5471.
+- A04_rect_a65 = A04_crops_a65 + 12 non-square window channels (A04/prepare_crops_rect.py, aspects 1:2, 2:1, 1:4, 4:1,
+  6 sizes, 1112 windows, stride side/3; train tasks A04_rect_{ps,tm}_tr{0,1}, 136-210 s per 85-image chunk).
+  Seeds 0/1/2 confirm 0.5433 / 0.5419 / 0.5417. 3 seeds vs A04_crops_a65 (CMP_A04_rect_a65_s012): confirm 0.5421 ->
+  0.5506, delta +0.0085 CI95 [+0.0036,+0.0139], W/L 242/209; explor 0.5432 -> 0.5516 (+0.0085 [+0.0034,+0.0140]);
+  fixed05 0.5376 -> 0.5465 (+0.0089 [+0.0040,+0.0141]); by method confirm ps +0.0144 ss +0.0005 tm +0.0107;
+  by coverage [0,.05) +0.016, [.05,.5) +0.019, [.5,.95) -0.001, [.95,1] +0.000. **Confirmed.**
+  With N01 (N01_A04_rect_a65): confirm 0.5506 -> 0.5542 (+0.0035 [+0.0013,+0.0060]); explor 0.5516 -> 0.5551;
+  per method confirm (N01) ps 0.5124 tm 0.5964 ss 0.5537.
+- Control A04_rect_a65_ctrl seed 0 (all PS/TM crop channels from a random message, SS a65 true): confirm 0.5255 vs
+  0.5433 (true) and 0.5213 (A01_a65 s0, no crop channels): the random-message maps carry a small message-independent
+  signal (+0.004, e.g. logit magnitude of the best crop), the bulk (+0.018) is message-specific.

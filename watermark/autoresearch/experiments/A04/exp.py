@@ -31,15 +31,15 @@ def load_crops(split, method):
     return o
 
 
-def load_rect(split, method):
-    parts = sorted(A04.glob(f"{split}_{method}_rect_*.pt"), key=lambda q: int(q.stem.rsplit("_", 1)[1]))
+def load_rect(split, method, tag="rect"):
+    parts = sorted(A04.glob(f"{split}_{method}_{tag}_*.pt"), key=lambda q: int(q.stem.rsplit("_", 1)[1]))
     ps = [torch.load(q, weights_only=False) for q in parts]
     o = {k: torch.cat([q[k] for q in ps]) for k in ("soft", "soft_ctrl")}
     o["names"] = [n for q in ps for n in q["names"]]
     return o
 
 
-def make_extra(methods, key="soft", ctrl=False, base="n03", rect=False):
+def make_extra(methods, key="soft", ctrl=False, base="n03", rect=False, small=False):
     base_fn = A01.make_extra({"n03": [], "a6": ["a6"], "a65": ["a6", "a5"]}[base])
 
     def extra(c, split):
@@ -53,6 +53,10 @@ def make_extra(methods, key="soft", ctrl=False, base="n03", rect=False):
             r = load_rect(split, c["method"])
             assert list(r["names"]) == list(c["names"]), "rect maps not aligned"
             x = torch.cat([x, r[key + ("_ctrl" if ctrl else "")].float() * 4], 1)
+        if small:                                  # + small / thin windows (prepare_crops_rect.py ... small), 8 channels
+            r = load_rect(split, c["method"], "small")
+            assert list(r["names"]) == list(c["names"]), "small maps not aligned"
+            x = torch.cat([x, r[key + ("_ctrl" if ctrl else "")].float() * 4], 1)
         out["agree_extra"] = torch.cat([out["agree_extra"], x], 1) if "agree_extra" in out else x
         return out
     return extra
@@ -64,5 +68,7 @@ REGISTRY = {
     "A04_crops_ctrl": lambda cfg: (cfg(), make_extra(ALL, ctrl=True), None, "same with a random message (control)"),
     "A04_crops_a6": lambda cfg: (cfg(), make_extra(ALL, base="a6"), None, "A01_a6 + crop-decoding maps, PixelSeal+TrustMark"),
     "A04_rect_a65": lambda cfg: (cfg(), make_extra(ALL, base="a65", rect=True), None, "A04_crops_a65 + non-square crop windows (PS, TM)"),
+    "A04_rect_a65_ctrl": lambda cfg: (cfg(), make_extra(ALL, base="a65", rect=True, ctrl=True), None, "A04_rect_a65 with random-message crop maps (control; SS a65 true)"),
+    "A04_small_a65": lambda cfg: (cfg(), make_extra(ALL, base="a65", rect=True, small=True), None, "A04_rect_a65 + small/thin crop windows (PS, TM)"),
     "A04_crops_a65": lambda cfg: (cfg(), make_extra(ALL, base="a65"), None, "A01_a65 (SS) + crop-decoding maps (PS, TM)"),
 }

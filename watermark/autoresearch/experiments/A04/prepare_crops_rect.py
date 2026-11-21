@@ -2,7 +2,7 @@
 the task allows patch aspect up to 16:1, 2:1 for TrustMark). Stride = window side / 3. Each window is resized by
 the wrapper to the (square) decoder input, i.e. the same anisotropic rescale an embedder applies to a patch.
 Channels: one per window shape (max over covering crops of the soft agreement), true and random message.
-usage: prepare_crops_rect.py <method> <split> [start end] -> research_cache/A04/{split}_{method}_rect[_{start}].pt"""
+usage: prepare_crops_rect.py <method> <split> start end [rect|small] -> research_cache/A04/{split}_{method}_{variant}_{start}.pt"""
 import os
 import sys
 import time
@@ -17,13 +17,19 @@ P = R.P
 from wmloc.data import LocalisationDataset  # noqa: E402
 from wmloc.watermarks import load_watermark  # noqa: E402
 
-SHAPES = [(64, 128), (96, 192), (128, 256), (176, 352), (64, 256), (96, 384)]
-SHAPES = SHAPES + [(w, h) for h, w in SHAPES]
+VARIANT = sys.argv[5] if len(sys.argv) > 5 else "rect"
+if VARIANT == "rect":
+    SHAPES = [(64, 128), (96, 192), (128, 256), (176, 352), (64, 256), (96, 384)]
+    SHAPES = SHAPES + [(w, h) for h, w in SHAPES]
+    DIV = 3
+else:   # "small": small squares / small 1:2 / thin 1:8 windows (tiny regions, elongated PixelSeal patches)
+    SHAPES = [(48, 48), (64, 64), (48, 96), (96, 48), (48, 384), (384, 48), (64, 512), (512, 64)]
+    DIV = 2
 OUT = Path("/p/project1/training2666/jacquet2/research_cache/A04"); OUT.mkdir(parents=True, exist_ok=True)
 
 
 def grid(L, s):
-    st = max(s // 3, 8); pos = list(range(0, L - s + 1, st))
+    st = max(s // DIV, 8); pos = list(range(0, L - s + 1, st))
     if pos[-1] != L - s:
         pos.append(L - s)
     return pos
@@ -58,7 +64,7 @@ def main():
     method, split = sys.argv[1], sys.argv[2]
     names = P.load_cache(method, split)["names"]
     a, b = (int(sys.argv[3]), int(sys.argv[4])) if len(sys.argv) > 4 else (0, len(names))
-    out = OUT / f"{split}_{method}_rect_{a}.pt"
+    out = OUT / f"{split}_{method}_{VARIANT}_{a}.pt"
     print("n boxes", len(BOX), flush=True)
     if out.exists():
         print("exists", out); print("---\nval_miou: 0.000000"); return
