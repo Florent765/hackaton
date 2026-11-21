@@ -1,0 +1,7 @@
+{
+  "weights_family": {"mmd": 1.0, "choice_js": 1.0, "choice_mode": 1.0, "bits_l1": 1.0, "numbers_l1": 1.0},
+  "weights_identity": {"choice_js": 1.0, "choice_mode": 1.0, "bits_l1": 1.0, "numbers_l1": 1.0, "prefix": 1.0, "mmd": 1.0},
+  "family_threshold": "auto",
+  "identity_threshold": "auto",
+  "heldout": "all"
+}

@@ -1,0 +1,51 @@
+{
+  "version": 1,
+  "notes": "Probe bank (TASK_PLAN_v2 step 3). Types: decode (detect greedy vs sampling), choice (first-token preference), bits / numbers (many samples per answer), greedy_long (long continuation, prefix divergence). heldout=true variants are excluded from tuning and used to validate. Never change the prompt of a probe id once it has been sent to scored endpoints: add a new id instead.",
+  "probes": [
+    {"id": "d1", "type": "decode", "variant": "sentence", "heldout": false,
+     "prompt": "Write one sentence about the sea."},
+    {"id": "d2", "type": "decode", "variant": "list", "heldout": true,
+     "prompt": "Name three fruits, separated by commas."},
+
+    {"id": "c_coin", "type": "choice", "variant": "coin", "heldout": false, "options": ["heads", "tails"],
+     "prompt": "I flip a fair coin. Answer with exactly one word, heads or tails."},
+    {"id": "c_ab", "type": "choice", "variant": "letter", "heldout": false, "options": ["a", "b"],
+     "prompt": "Choose A or B. Reply with the single letter only."},
+    {"id": "c_digit", "type": "choice", "variant": "digit", "heldout": false,
+     "options": ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
+     "prompt": "Pick a random digit from 0 to 9. Reply with the digit only."},
+    {"id": "c_color", "type": "choice", "variant": "color", "heldout": false,
+     "options": ["red", "blue", "green", "yellow", "purple"],
+     "prompt": "Pick one color: red, blue, green, yellow, purple. Reply with the word only."},
+    {"id": "c_num100", "type": "choice", "variant": "number", "heldout": false,
+     "prompt": "Think of a random number between 1 and 100. Reply with the number only."},
+    {"id": "c_tomato", "type": "choice", "variant": "lowentropy", "heldout": false, "options": ["yes", "no"],
+     "prompt": "Is a tomato a fruit? Answer yes or no, nothing else."},
+    {"id": "c_capital", "type": "choice", "variant": "lowentropy", "heldout": false,
+     "prompt": "What is the capital of Australia? Reply with one word."},
+    {"id": "c_animal", "type": "choice", "variant": "animal", "heldout": true,
+     "options": ["cat", "dog", "owl", "fox", "bee"],
+     "prompt": "Pick one animal: cat, dog, owl, fox, bee. Reply with the word only."},
+
+    {"id": "b_bin200", "type": "bits", "variant": "binary", "heldout": false, "alphabet": "01",
+     "prompt": "Write a random sequence of exactly 200 characters, each either 0 or 1. Output only the sequence, with no spaces and no other text."},
+    {"id": "b_coin150", "type": "bits", "variant": "coins", "heldout": false, "alphabet": "TH",
+     "prompt": "Simulate 150 fair coin flips. Write H for heads and T for tails, with no spaces. Output only the letters."},
+    {"id": "b_bin180", "type": "bits", "variant": "binary2", "heldout": true, "alphabet": "01",
+     "prompt": "Generate a random binary string of length 180. Output only the string."},
+
+    {"id": "n_int10", "type": "numbers", "variant": "ints", "heldout": false, "lo": 1, "hi": 10,
+     "prompt": "List 80 random integers between 1 and 10, separated by commas. Output only the list."},
+    {"id": "n_die", "type": "numbers", "variant": "die", "heldout": false, "lo": 1, "hi": 6,
+     "prompt": "Roll a six-sided die 100 times and write the results as digits separated by spaces. Output only the digits."},
+    {"id": "n_int20", "type": "numbers", "variant": "ints2", "heldout": true, "lo": 1, "hi": 20,
+     "prompt": "Write 60 random numbers from 1 to 20, separated by commas, and nothing else."},
+
+    {"id": "g_lighthouse", "type": "greedy_long", "variant": "story", "heldout": false,
+     "prompt": "Continue the following text for about 200 words, in the same style:\nThe old lighthouse stood at the edge of the cliff, and every night its keeper climbed the ninety steps to light the lamp."},
+    {"id": "g_fridge", "type": "greedy_long", "variant": "explain", "heldout": false,
+     "prompt": "Explain in about 200 words how a refrigerator works."},
+    {"id": "g_station", "type": "greedy_long", "variant": "describe", "heldout": true,
+     "prompt": "Write a 200-word description of a busy train station in the morning."}
+  ]
+}
