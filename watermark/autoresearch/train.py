@@ -65,7 +65,10 @@ def inputs(c):
     for k in ("agree", "rgb", "scalars"):
         if k in c["feats"]:
             f[k] = c["feats"][k]
-    return {k: v.to(DEV).float() for k, v in f.items()}
+    out = {k: v.to(DEV).float() for k, v in f.items()}
+    for n in c["feature_names"]:
+        out[n] = torch.log1p(out[n].clamp(min=0))
+    return out
 
 
 def fit(f, y, idx, seed=SEED):
