@@ -18,3 +18,15 @@ N01_kstar(N03b_true)	N03b_true	0,1,2	-	-	0.5243	0.5269	0.5211	0.5261	+0.0049	[+0
 E05_res	N03_attr	0	0.5145	0.5192	0.5170	0.5203	0.5162	0.5175	+0.0012	[-0.0032,+0.0057]	249/223	ps +0.0052 tm +0.0012 ss +0.0037 (explor/confirm mix)	~60	2302	N03 + 10 native residual channels (128 grid)	not promoted (<+0.003)
 E05_grad	N03_attr	0	0.5145	0.5149	0.5170	0.5166	0.5162	0.5157	-0.0005	[-0.0047,+0.0038]	235/248	-	~60	2302	N03 + derivative channels only	control
 E05_shuffled	N03_attr	0	0.5145	0.5119	0.5170	0.5134	0.5162	0.5120	-0.0042	[-0.0086,-0.0000]	229/252	-	~60	2302	N03 + residuals shuffled across images	control
+AR_n03_rawstd	N03_attr	0	0.5145	0.5152	-	-	0.5162	0.5160	-0.0003	[-0.0027,+0.0022]	202/183	ss -0.0028	~60	-	AR/exp.py	rejected
+AR_n03_posneg	N03_attr	0	0.5145	0.5152	-	-	0.5162	0.5157	-0.0006	[-0.0032,+0.0020]	149/165	ss -0.0023	~60	-	AR/exp.py	rejected
+AR_n03_dense	N03_attr	0	0.5145	0.5091	-	-	0.5162	0.5097	-0.0065	[-0.0103,-0.0030]	136/179	ss -0.0206	~60	-	AR/prepare_attr_dense.py (52x52)	rejected
+AR_tm_l3	N03_attr	0	0.5145	0.5169	-	-	0.5162	0.5191	+0.0029	[+0.0006,+0.0050]	180/105	tm +0.0075	~60	-	AR/exp.py	borderline
+AR_tm_l2	N03_attr	0,1,2	0.5174	0.5175	0.5222	0.5238	0.5200	0.5207	+0.0007	[-0.0015,+0.0029]	229/178	tm +0.0046 (ps -0.0019 = GPU noise, identical inputs)	~60	-	AR/exp.py	not confirmed (TM consistent +0.004)
+N03b_tm(assembled)	N03_attr	0,1,2	0.5174	0.5192	0.5222	0.5235	0.5200	0.5214	+0.0014	[-0.0004,+0.0033]	87/64	tm +0.0041	-	-	common/assemble.py	not confirmed
+N01_variants(fine,regime)	N01	0,1,2	-	-	-	-	0.5231	0.5226/0.5221	-0.0005/-0.0010	[-0.0013,+0.0002]/[-0.0022,+0.0003]	-	-	cpu	-	AR/eval_n01_variants.py	rejected
+A01_a65(agent)	N03_attr	0,1,2	-	-	-	-	0.5200	0.5249	+0.0048	[+0.0020,+0.0076]	-	ss +0.016	-	-	wt-agent A01 (exact attribution dec_conv_6/5)	confirmed (agent)
+A04_crops(agent)	N03_attr	0,1,2	-	-	-	-	0.5200	0.5377	+0.0177	[+0.0116,+0.0242]	-	tm +0.049	-	-	wt-agent A04 crop-decoding verifier	confirmed (agent)
+A04_crops_a65+N01(agent)	N03_attr	0,1,2	-	-	-	-	0.5200	0.5464	-	-	-	-	-	-	wt-agent	test-ready
+A04_rect_a65(agent)	A04_crops_a65	0,1,2	0.5465	-	0.5516	-	0.5421	0.5506	+0.0085	[+0.0036,+0.0139]	-	ps +0.014 tm +0.011	-	-	wt-agent A04 + non-square windows	confirmed (agent)
+A04_rect_a65+N01(agent)	A04_rect_a65	0,1,2	-	-	0.5551	-	0.5506	0.5542	+0.0035	[+0.0013,+0.0060]	-	ps 0.512 tm 0.596 ss 0.554	-	-	wt-agent	BEST (test rect caches missing)
