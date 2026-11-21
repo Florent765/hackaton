@@ -133,9 +133,12 @@ def main():
         for k in range(P.K):
             tr = torch.nonzero(fold != k)[:, 0].tolist(); va = torch.nonzero(fold == k)[:, 0].tolist()
             pr[va] = sum(probs(fit(f, y, tr, seed=s), f, va) for s in range(3)) / 3
-        sc = {t: float(miou_batch(pr >= t, y).mean()) for t in THRESHOLDS}
+        hi = (c["feats"]["scalars"][:, 1] > 0.75).to(DEV)
+        def bin2(p, t):
+            return torch.where(hi[:, None, None], p >= t[1], p >= t[0])
+        sc = {(t0, t1): float(miou_batch(bin2(pr, (t0, t1)), y).mean()) for t0 in THRESHOLDS for t1 in THRESHOLDS}
         thr[method] = max(sc, key=sc.get)
-        oof[method] = (pr >= thr[method]).to(torch.uint8).cpu()
+        oof[method] = bin2(pr, thr[method]).to(torch.uint8).cpu()
         if a.save_oof:
             oof.setdefault("_probs", {})[method] = {"probs": pr.half().cpu(), "names": c["names"], "thr": thr[method],
                                                     "scalars": c["feats"]["scalars"]}
@@ -143,7 +146,9 @@ def main():
         if a.final:
             ct = P.load_cache(method, "test"); ft = inputs(ct, "test")
             pt = sum(probs(fit(f, y, list(range(len(y))), seed=s), ft, list(range(len(ct["names"])))) for s in range(3)) / 3
-            oof.setdefault("_test", []).append((ct["names"], (pt >= thr[method]).cpu()))
+            hit = (ct["feats"]["scalars"][:, 1] > 0.75).to(DEV)
+            mt = torch.where(hit[:, None, None], pt >= thr[method][1], pt >= thr[method][0])
+            oof.setdefault("_test", []).append((ct["names"], mt.cpu()))
             del ft
         del f, y
         torch.cuda.empty_cache()
