@@ -1,96 +1,114 @@
-#!/bin/bash
-# =============================================================
-# HACKATHON SETUP: STEP 1 OF 2 - TEAM LEAD RUNS FIRST
-# =============================================================
-# EXECUTION ORDER (IMPORTANT):
-# 1. The TEAM LEAD configures and runs THIS script first.
-#    Run: source hackathon_setup.sh
-#    Wait until it finishes successfully.
-# 2. ONLY AFTER THAT, each remaining team member configures
-#    and runs teammate.sh from their own JURECA account.
-#    Run: source teammate.sh
-#
-# The team lead runs only this script. Teammates run only
-# teammate.sh. Do not run both scripts from the same account.
-#
-# Before running, set TEAM_LEAD to your Juelich username,
-# TEAMMATE_1 through TEAMMATE_3 to your teammates' Juelich
-# usernames, and TEAM_FOLDER to the agreed team name.
-# =============================================================
+_log "Step 6/6 - Downloading datasets and creating per-task environments..."
 
-# =============================================================
-# CONFIGURATION - TEAM LEAD EDITS THESE VALUES
-# =============================================================
-TEAM_LEAD=""    # Your Juelich username
-TEAMMATE_1=""   # Teammate's Juelich username; leave blank if unused
-TEAMMATE_2=""
-TEAMMATE_3=""
-TEAM_FOLDER=""  # Your team name; teammates must use the exact same value
-# =============================================================
-
-RED='\033[0;31m'
-GREEN='\033[0;32m'
-YELLOW='\033[1;33m'
-BLUE='\033[0;34m'
-NC='\033[0m'
-
-_log()   { echo -e "${BLUE}[INFO]${NC}  $1"; }
-_ok()    { echo -e "${GREEN}[OK]${NC}    $1"; }
-_warn()  { echo -e "${YELLOW}[WARN]${NC}  $1"; }
-_error() { echo -e "${RED}[ERROR]${NC} $1"; }
-
-if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
-    _error "This script must be sourced: source hackathon_setup.sh"
-    exit 1
+if [[ -n "$HF_TOKEN" ]]; then
+    _ok "HF_TOKEN found - will be used for authentication."
+else
+    _log "No HF_TOKEN set - proceeding without (fine for public datasets)."
 fi
 
-if [[ -z "$TEAM_LEAD" || -z "$TEAM_FOLDER" || "$TEAM_LEAD" == */* || "$TEAM_FOLDER" == */* || "$TEAM_FOLDER" == "." || "$TEAM_FOLDER" == ".." ]]; then
-    _error "Set valid TEAM_LEAD and TEAM_FOLDER values before running."
-    return 1
+BOOTSTRAP_VENV="$TEAM_DIR/.bootstrap"
+if [[ ! -d "$BOOTSTRAP_VENV" ]]; then
+    _log "Creating bootstrap venv for downloads..."
+    uv venv -p 3.12 "$BOOTSTRAP_VENV" || return 1
+    VIRTUAL_ENV="$BOOTSTRAP_VENV" uv pip install huggingface_hub || return 1
+    _ok "Bootstrap venv ready."
+else
+    _warn "Bootstrap venv already exists. Skipping."
 fi
 
-if [[ "$TEAM_LEAD" != "$(id -un)" ]]; then
-    _error "TEAM_LEAD must match the username running this script: $(id -un)"
-    return 1
-fi
+BOOTSTRAP_PYTHON="$BOOTSTRAP_VENV/bin/python"
 
-# Hugging Face datasets to download (org/repo format)
-HF_DATASETS=(
-    "SprintML/unlearning"
-    "SprintML/model_equality"
-    "SprintML/Hackathon_Watermark_Localisation_Task"
+for dataset in "${HF_DATASETS[@]}"; do
+    dataset_name="${dataset##*/}"
+    dest="$TEAM_DIR/$dataset_name"
+    VENV_DIR="$dest/.venv"
+    REQ="$dest/requirements.txt"
+
+    echo ""
+    _log "--- Task: $dataset_name ---"
+
+    if [[ -d "$dest" ]]; then
+        _warn "  Dataset directory already exists. Skipping download."
+    else
+        _log "  Downloading $dataset..."
+        "$BOOTSTRAP_PYTHON" - "$dataset" "$dest" <<'PYEOF'
+import os
+import sys
+from huggingface_hub import snapshot_download
+
+snapshot_download(
+    repo_id=sys.argv[1],
+    repo_type="dataset",
+    local_dir=sys.argv[2],
+    token=os.environ.get("HF_TOKEN"),
 )
+PYEOF
+        if [[ $? -ne 0 ]]; then
+            _error "  Download failed - skipping venv setup."
+            continue
+        fi
+        _ok "  Downloaded $dataset_name."
+    fi
 
-PROJECT_NAME="training2666"
-SCRATCH_BASE="/p/scratch/$PROJECT_NAME"
-TEAM_LEAD_DIR="$SCRATCH_BASE/$TEAM_LEAD"
-TEAM_DIR="$TEAM_LEAD_DIR/$TEAM_FOLDER"
+    mkdir -p "$dest/output" || { _error "Cannot create output directory"; continue; }
+    setfacl -m m:rwx "$dest/output"
+    setfacl -d -m m:rwx "$dest/output"
 
-# Build teammates array, skipping blank entries
-TEAMMATES=()
-for t in "$TEAMMATE_1" "$TEAMMATE_2" "$TEAMMATE_3"; do
-    [[ -n "$t" ]] && TEAMMATES+=("$t")
+    if [[ -d "$VENV_DIR" ]]; then
+        _warn "  Venv already exists. Skipping."
+        continue
+    fi
+
+    if [[ ! -f "$REQ" ]]; then
+        _warn "  No requirements.txt found in $dataset_name - skipping venv."
+        continue
+    fi
+
+    _log "  Setting up uv project for $dataset_name..."
+    cd "$dest" || { _error "  Cannot cd into $dest"; continue; }
+
+    if [[ ! -f pyproject.toml ]]; then
+        uv init -p 3.12 --no-workspace || { _error "  uv init failed"; cd "$TEAM_DIR"; continue; }
+    fi
+
+    uv venv -p 3.12 "$VENV_DIR" || { _error "  uv venv failed"; cd "$TEAM_DIR"; continue; }
+
+    # Remove standalone comments and blank lines from requirements.
+    # Original behavior uses uv add to create pyproject.toml and uv.lock.
+    mapfile -t DEPS < <(grep -vE '^[[:space:]]*(#|$)' "$REQ")
+
+    if [[ "${#DEPS[@]}" -eq 0 ]]; then
+        _warn "  requirements.txt is empty - skipping uv add."
+    else
+        if VIRTUAL_ENV="$VENV_DIR" uv add "${DEPS[@]}"; then
+            _ok "  Done: pyproject.toml + uv.lock + .venv ready."
+        else
+            _error "  Failed to install requirements for $dataset_name."
+        fi
+    fi
+
+    cd "$TEAM_DIR" || return 1
 done
 
-if [[ "${#TEAMMATES[@]}" -eq 0 ]]; then
-    _error "No teammates specified. Add at least one."
-    return 1
+if [[ -d "$BOOTSTRAP_VENV" ]]; then
+    rm -rf "$BOOTSTRAP_VENV"
+    _ok "Bootstrap venv removed."
 fi
 
-for t in "${TEAMMATES[@]}"; do
-    if [[ "$t" == */* || "$t" == "$TEAM_LEAD" ]]; then
-        _error "Invalid teammate username: $t"
-        return 1
-    fi
-done
-
 echo ""
 echo "============================================="
-echo "   Hackathon Setup - Team Lead (Step 1/2)"
+echo -e "${GREEN}   Team lead setup finished!${NC}"
 echo "============================================="
+echo "  Team access : $TEAM_LEAD + ${TEAMMATES[*]}"
+echo "  uv          : $(uv --version 2>&1)"
 echo ""
-echo "  Team lead   : $TEAM_LEAD"
-echo "  Teammates   : ${TEAMMATES[*]}"
-echo "  Lead folder : $TEAM_LEAD_DIR"
-echo "  Team folder : $TEAM_DIR"
+echo "  NEXT: Each remaining team member must now run:"
+echo "        source teammate.sh"
+echo "  with TEAM_LEAD=$TEAM_LEAD and TEAM_FOLDER=$TEAM_FOLDER"
+echo ""
+echo "  Activate a task environment:"
+echo "  source $TEAM_DIR/<dataset-name>/.venv/bin/activate"
+echo ""
+echo "  Submit a job: sbatch job.sh"
+echo "============================================="
 echo ""
