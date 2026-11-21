@@ -70,7 +70,7 @@ def build():
                 rec["masks"] = torch.from_numpy(np.stack([m["mask128"] for m in meta])).to(torch.uint8)
                 rec["full_watermark"] = torch.tensor([bool(m["full_watermark"]) for m in meta])
                 rec["fold"] = torch.tensor([fold[m["image_name"]] for m in meta])
-            tmp = out.with_suffix(".tmp"); torch.save(rec, tmp); os.replace(tmp, out)
+            tmp = out.with_suffix(f".tmp{os.getpid()}"); torch.save(rec, tmp); os.replace(tmp, out)
             del ex; torch.cuda.empty_cache()
             print(f"{split} {method}: {len(idx)} images, {time.time() - t0:.0f}s, "
                   f"{out.stat().st_size / 1e9:.2f} GB -> {out}", flush=True)

@@ -5,7 +5,9 @@ Protocol (queue dir default work/$USER/ar_queue):
   <queue>/<exp_id>/train.py   experiment file, then an empty <queue>/<exp_id>/READY marks it runnable
   worker runs `python train.py [args from ARGS file]` with cwd=<exp_id>, PYTHONPATH=<harness dir>, stdout -> run.log
   then writes <exp_id>/DONE containing the exit code ('timeout' if killed after --timeout seconds)
-  <queue>/HEARTBEAT is touched every poll; the worker exits after --idle-exit seconds without work.
+  Several workers (separate 1-GPU jobs) can share one queue: experiments are claimed atomically (<exp_id>/CLAIM),
+  caches are built by one worker under BUILD.lock while the others wait.
+  <queue>/HEARTBEAT_<jobid> is touched every poll; a worker exits after --idle-exit seconds without work.
 Launch from the task root:
   sbatch --time=04:00:00 ../gpu_job.sh work/$USER/ar/autoresearch/worker.py
 """
@@ -32,16 +34,43 @@ def log(*x):
     print(time.strftime("%H:%M:%S"), *x, flush=True)
 
 
-missing = [m for s in ("train", "test") for m in P.METHODS if not (P.CACHE / f"{s}_{m}.pt").exists()]
-if missing:
-    log("building caches, missing:", missing)
-    t0 = time.time(); P.build(); log(f"caches built in {time.time() - t0:.0f}s")
-(Q / "WORKER").write_text(f"{os.environ.get('SLURM_JOB_ID')} {os.uname().nodename} started {time.ctime()}\n")
+def claim(path: Path) -> bool:
+    """Atomic claim shared by several workers (O_EXCL create)."""
+    try:
+        fd = os.open(path, os.O_CREAT | os.O_EXCL | os.O_WRONLY); os.write(fd, JOB.encode()); os.close(fd)
+        return True
+    except FileExistsError:
+        return False
+
+
+JOB = f"{os.environ.get('SLURM_JOB_ID')}@{os.uname().nodename}"
+cache_ok = lambda: all((P.CACHE / f"{s}_{m}.pt").exists() for s in ("train", "test") for m in P.METHODS)
+if not cache_ok():
+    P.CACHE.mkdir(parents=True, exist_ok=True)
+    lock = P.CACHE / "BUILD.lock"
+    if claim(lock):
+        try:
+            log("building caches"); t0 = time.time(); P.build(); log(f"caches built in {time.time() - t0:.0f}s")
+        finally:
+            lock.unlink(missing_ok=True)
+    else:
+        log("another worker builds the caches, waiting")
+        while not cache_ok():
+            if not lock.exists() and not cache_ok():             # builder died: take over
+                if claim(lock):
+                    try:
+                        P.build()
+                    finally:
+                        lock.unlink(missing_ok=True)
+            time.sleep(10)
+        log("caches ready")
+(Q / f"WORKER_{os.environ.get('SLURM_JOB_ID')}").write_text(f"{JOB} started {time.ctime()}\n")
 last = time.time()
 while True:
-    (Q / "HEARTBEAT").write_text(time.ctime())
-    todo = sorted((d for d in Q.iterdir() if d.is_dir() and (d / "READY").exists() and not (d / "DONE").exists()),
-                  key=lambda d: (d / "READY").stat().st_mtime)
+    (Q / f"HEARTBEAT_{os.environ.get('SLURM_JOB_ID')}").write_text(time.ctime())
+    todo = sorted((d for d in Q.iterdir() if d.is_dir() and (d / "READY").exists() and not (d / "DONE").exists()
+                   and not (d / "CLAIM").exists()), key=lambda d: (d / "READY").stat().st_mtime)
+    todo = [d for d in todo[:1] if claim(d / "CLAIM")]
     if not todo:
         if time.time() - last > a.idle_exit:
             log("idle, exiting"); break
