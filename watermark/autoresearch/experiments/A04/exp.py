@@ -39,6 +39,30 @@ def load_rect(split, method, tag="rect"):
     return o
 
 
+def load_agg(split, method):
+    parts = sorted(A04.glob(f"{split}_{method}_agg_*.pt"), key=lambda q: int(q.stem.rsplit("_", 1)[1]))
+    ps = [torch.load(q, weights_only=False) for q in parts]
+    o = {k: torch.cat([q[k] for q in ps]) for k in ps[0] if k.startswith("soft")}
+    o["names"] = [n for q in ps for n in q["names"]]
+    return o
+
+
+def make_agg_extra(methods, aggs=("max", "mean", "min"), ctrl=False, base="a65"):
+    """PS/TM: square + non-square windows (17 shapes) x aggregations from prepare_agg.py; SS: A01 maps."""
+    base_fn = A01.make_extra({"n03": [], "a6": ["a6"], "a65": ["a6", "a5"]}[base])
+
+    def extra(c, split):
+        out = base_fn(c, split)
+        if c["method"] not in methods:
+            return out
+        o = load_agg(split, c["method"])
+        assert list(o["names"]) == list(c["names"]), "agg maps not aligned"
+        x = torch.cat([o[f"soft_{a}" + ("_ctrl" if ctrl else "")].float() * 4 for a in aggs], 1)
+        out["agree_extra"] = torch.cat([out["agree_extra"], x], 1) if "agree_extra" in out else x
+        return out
+    return extra
+
+
 def make_extra(methods, key="soft", ctrl=False, base="n03", rect=False, small=False):
     base_fn = A01.make_extra({"n03": [], "a6": ["a6"], "a65": ["a6", "a5"]}[base])
 
@@ -70,5 +94,6 @@ REGISTRY = {
     "A04_rect_a65": lambda cfg: (cfg(), make_extra(ALL, base="a65", rect=True), None, "A04_crops_a65 + non-square crop windows (PS, TM)"),
     "A04_rect_a65_ctrl": lambda cfg: (cfg(), make_extra(ALL, base="a65", rect=True, ctrl=True), None, "A04_rect_a65 with random-message crop maps (control; SS a65 true)"),
     "A04_small_a65": lambda cfg: (cfg(), make_extra(ALL, base="a65", rect=True, small=True), None, "A04_rect_a65 + small/thin crop windows (PS, TM)"),
+    "A04_agg_a65": lambda cfg: (cfg(), make_agg_extra(ALL), None, "A04_rect_a65 windows with max+mean+min over covering windows (PS, TM)"),
     "A04_crops_a65": lambda cfg: (cfg(), make_extra(ALL, base="a65"), None, "A01_a65 (SS) + crop-decoding maps (PS, TM)"),
 }

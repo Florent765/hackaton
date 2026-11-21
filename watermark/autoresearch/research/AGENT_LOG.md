@@ -76,3 +76,17 @@ All numbers below were read from the run logs in /p/project1/training2666/jacque
 - Control A04_rect_a65_ctrl seed 0 (all PS/TM crop channels from a random message, SS a65 true): confirm 0.5255 vs
   0.5433 (true) and 0.5213 (A01_a65 s0, no crop channels): the random-message maps carry a small message-independent
   signal (+0.004, e.g. logit magnitude of the best crop), the bulk (+0.018) is message-specific.
+
+- A04_small_a65 = A04_rect_a65 + 8 small/thin window channels (48/64 squares, 48x96, 48x384, 64x512 and transposes;
+  1200 windows, stride side/2; tasks A04_small_{ps,tm}_tr{0,1}). Seed 0 (A04_small_a65_s0, CMP_A04_small_s0): confirm
+  0.5441 vs A04_rect_a65 s0 0.5433, delta +0.0008 CI95 [-0.0029,+0.0046] (ps +0.0016 tm +0.0008). **Rejected** (< +0.003).
+
+## Reproduction (best configuration so far: A04_rect_a65 + N01)
+Remote code root C=/p/project1/training2666/jacquet2/code/experiments (A01, A04 folders = this worktree).
+1. StegaStamp deep attribution caches (train+test): `rq.sh A01_prep A01/prepare_deep.py` (~20 s).
+2. Crop-verifier caches (per method in pixelseal, trustmark; train shown, test identical with split=test, chunks < 600 s):
+   `rq.sh <id> A04/prepare_crops.py <method> train` (square windows; chunked form `<method> test 0 170`, `170 340`),
+   `rq.sh <id> A04/prepare_crops_rect.py <method> train 0 85 rect` and `85 170 rect` (test: 4 chunks of 85).
+3. Train: `rq.sh <id> run_exp --exp A04_rect_a65 --seed {0,1,2}`; compare: `common/compare.py N03_attr A04_rect_a65 --seeds 0 1 2`;
+   decoding: `N01/eval_n01.py A04_rect_a65 0 1 2`.
+Caches: /p/project1/training2666/jacquet2/research_cache/{A01,A04}/ ; runs: /p/project1/training2666/jacquet2/research/<exp>/.
