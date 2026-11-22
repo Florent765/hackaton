@@ -8,10 +8,12 @@ import argparse, copy, time
 import torch, torch.nn as nn, torch.nn.functional as F
 
 ap = argparse.ArgumentParser()
-ap.add_argument("--steps", type=int, default=600); ap.add_argument("--lam", type=float, default=1.0)
+ap.add_argument("--steps", type=int, default=600); ap.add_argument("--lam", default="1.0")
 ap.add_argument("--first", type=int, default=6); ap.add_argument("--lr", type=float, default=3e-5)
 ap.add_argument("--anchor", default="strong"); ap.add_argument("--tag", default="p1"); ap.add_argument("--export", type=int, default=0)
 ap.add_argument("--bs", type=int, default=64); ap.add_argument("--controls", type=int, default=1)
+ap.add_argument("--alphas", default="0.5"); ap.add_argument("--probes", type=int, default=1); ap.add_argument("--name", default="")
+ap.add_argument("--advmode", default="id")  # id | random (frozen random probes = non-identity control)
 A = ap.parse_args(); print(vars(A), flush=True)
 torch.manual_seed(0); T0 = time.time()
 u8 = L.load_images(); N = len(u8)
@@ -71,8 +73,13 @@ def train(lam, seed):
     # adversary warm start on original features (4 strong + 2 mild views)
     F0 = [extract(orig, "strong", 100 + 7919 * v) for v in range(4)] + [extract(orig, "mild", 200 + 7919 * v) for v in range(2)]
     y_all = torch.arange(N, device=L.DEV).repeat(len(F0))
-    advs = {d: fit_probe(torch.cat([f[d] for f in F0]), y_all, "lin", 300, seed=seed) for d in DEPTHS}
-    aopt = torch.optim.Adam([p for a in advs.values() for p in a.parameters()], lr=1e-3)
+    if A.advmode == "random":
+        torch.manual_seed(seed); advs = {d: make_probe("lin") for d in DEPTHS}
+        with torch.no_grad():  # scale so the random probe logits have a spread comparable to trained ones
+            for a in advs.values(): a[1].weight.mul_(30.0)
+    else:
+        advs = {d: fit_probe(torch.cat([f[d] for f in F0]), y_all, "lin", 300, seed=seed) for d in DEPTHS}
+    aopt = torch.optim.Adam([p for a in advs.values() for p in a.parameters()], lr=1e-3 if A.advmode == "id" else 0.0)
     store, hs = feats_hook(m); log = []
     for t in range(A.steps):
         m.train(); idx = torch.randint(0, N, (A.bs,)); y = idx.to(L.DEV); x = L.prep(u8[idx])
@@ -118,18 +125,20 @@ def evaluate(m, name):
 
 
 sd0 = L.original_state()
-evaluate(orig, "orig"); fresh_probe_test(orig, "orig")
-runs = [("adv", A.lam)] + ([("ctrl_lam0", 0.0)] if A.controls else [])
+evaluate(orig, "orig")
+if A.probes: fresh_probe_test(orig, "orig")
+runs = [(f"adv_l{l}" if "," in A.lam else "adv", float(l)) for l in A.lam.split(",")] + ([("ctrl_lam0", 0.0)] if A.controls else [])
 for name, lam in runs:
     m = train(lam, seed=1)
-    evaluate(m, name); fresh_probe_test(m, name)
+    evaluate(m, name)
+    if A.probes: fresh_probe_test(m, name)
     sd1 = {k: v.detach().cpu() for k, v in m.state_dict().items()}
-    for a in (0.5,):
+    for a in [float(v) for v in A.alphas.split(",")]:
         mi = L.build_model(); mi.load_state_dict(L.interpolate(sd0, sd1, a)); mi = mi.to(L.DEV).eval()
         evaluate(mi, f"{name}_a{a}")
-        if A.export and name == "adv":
-            L.export(L.interpolate(sd0, sd1, a), f"B2_{A.tag}_{name}_a{a}", vars(A))
-    if A.export and name == "adv":
-        L.export(sd1, f"B2_{A.tag}_{name}_a1", vars(A))
+        if A.export and name.startswith("adv"):
+            L.export(L.interpolate(sd0, sd1, a), (f"{A.name}_{name}" if A.name else f"B2_{A.tag}_{name}") + f"_a{a}", vars(A))
+    if A.export and name.startswith("adv"):
+        L.export(sd1, (f"{A.name}_{name}" if A.name else f"B2_{A.tag}_{name}") + "_a1", vars(A))
     del m; torch.cuda.empty_cache()
 print(f"TOTAL {time.time()-T0:.0f}s", flush=True)
