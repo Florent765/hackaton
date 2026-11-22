@@ -1,6 +1,6 @@
 """B5 - evolving population of amnesic models (NSGA-II-lite). Genes: per-block log-scales of LayerScale gammas (ls1, ls2
-x 12), head temperature (log-scale of head W,b), bias shift on the 45 pseudo-label classes, interpolation alpha toward
-the B4 re-fitted model (if present). Objectives (all minimised, FIT images only):
+x 12), head temperature (log-scale of head W,b), bias shift on the 45 pseudo-label classes, interpolation alpha (0..2) toward
+an auxiliary saved model (arg 3: a B4 re-fit or the B3 K-FAC removal step). Objectives (all minimised, FIT images only):
  f1 = KL_T2(orig on strong views (2 seeds averaged) || model on CLEAN)   -> clean behaves like non-memorised views
  f2 = KL_T2(orig || model) on mild views                                 -> preservation
  f3 = KL_T2(orig || model) on strong views (other seed)                  -> preservation on 'generic-looking' inputs
@@ -95,7 +95,7 @@ g = torch.Generator().manual_seed(0)
 def mutate(gn, sig=1.0):
     c = gn.clone(); mask = torch.rand(NG, generator=g) < 0.3
     step = torch.randn(NG, generator=g) * torch.tensor([0.15] * 24 + [0.15, 0.4, 0.2]) * sig
-    c[mask] += step[mask]; c[26] = c[26].clamp(0, 1) if gpuB4 is not None else 0.0; c[25] = c[25].clamp(max=0.0)
+    c[mask] += step[mask]; c[26] = c[26].clamp(0, 2) if gpuB4 is not None else 0.0; c[25] = c[25].clamp(max=0.0)
     return c
 
 
@@ -139,5 +139,6 @@ for bud in (0.1, 0.3):
     if not ok: print("no candidate for budget", bud); continue
     r = min(ok, key=lambda r: r["f1"]); gn = pop[r["i"]]; print("PICK", bud, json.dumps(r), "genes", [round(float(x), 3) for x in gn], flush=True)
     sd1 = {k: v.cpu() for k, v in apply(gn).items()}; C.save_sd(sd1, f"B5_pick_b{bud}")
+    L.export(sd1, f"B5_pick_b{bud}", {"genes": [round(float(x), 4) for x in gn], "aux": B4N, **r})
     C.eval_grid(sd0, sd1, f"B5_pick_b{bud}", u8, tc)
 print(f"B5 total {time.time()-t00:.0f}s", flush=True)

@@ -64,3 +64,73 @@ Reading:
 - Unlike the random control and B4, the K-FAC removal step moves clean images more than strong views (clean/strong KL ratio 2.4, against 0.2 for random and 0.36 for SWAG).
 - The change is a heavy tail: median clean CE stays at 0, the sd jumps to 2.0, and about 2% of argmaxes flip. It is not a uniform loss of confidence.
 - That is qualitatively gold-like (heavier tail), but far too small against the anchor of gold agreement around 0.85–0.95.
+
+Larger steps (B3_p3, 6 min):
+
+| direction, target | alpha | clean kl | clean ce mean/sd (q50, q95) | clean conf | clean chg | mild kl | strong kl | diag kl | diag chg |
+|---|---|---|---|---|---|---|---|---|---|
+| kfac kl0.2 (rel 0.55) | 0.5 | 0.090 | 0.206/2.01 (0.0, 0.009) | 0.994 | 0.020 | 0.064 | 0.038 | 0.060 | 0.015 |
+| kfac kl0.2 | 1 | 0.231 | 0.472/2.84 (0.0, 0.93) | 0.988 | 0.052 | 0.200 | 0.169 | 0.169 | 0.043 |
+| diag kl0.2 (rel 0.039) | 1 | 0.167 | 0.318/2.73 (0.0, 0.13) | 0.992 | 0.038 | 0.187 | 0.211 | 0.139 | 0.036 |
+| kfac kl0.5 (rel 0.84) | 0.5 | 0.153 | 0.326/2.45 (0.0, 0.089) | 0.991 | 0.035 | 0.123 | 0.092 | 0.109 | 0.028 |
+| kfac kl0.5 | 1 | 0.508 | 0.982/3.89 (0.0001, 7.09) | 0.976 | 0.107 | 0.484 | 0.481 | 0.396 | 0.103 |
+| diag kl0.5 (rel 0.053) | 1 | 0.388 | 0.752/4.37 (0.0, 3.08) | 0.987 | 0.073 | 0.420 | 0.472 | 0.320 | 0.066 |
+
+- K-FAC stays more selective than the diagonal: at matched clean KL it moves strong views less. The selectivity fades as the step grows, and at kl0.5 with alpha 1 clean and strong are about equal.
+- The removal step is always heavy-tailed: a growing minority of images flips with very high CE while the median image stays at conf about 1. Mean conf never drops below 0.976.
+- This is not the gold anchor (agreement 0.85–0.95 *with lowered confidence on most images*), so it is at best one component of a solution.
+- The posterior approximations disagree on direction (cos 0.00–0.04), so the "Bayesian" content beyond the gradient is not identifiable from this data.
+
+Decision B3: **inconclusive, weakly promising as a component.** K-FAC removal gives gold-like heavy tails and some clean-over-strong selectivity at small steps. The directions are not robust across approximations.
+Exported: `B3_kfac_kl02_a10`, `B3_kfac_kl05_a05`.
+
+## B5: evolving population of amnesic models (NSGA-II-lite, population 12, 8 generations, 5 min total)
+
+Genes (27):
+- per-block log-scales of the LayerScale gammas (ls1 and ls2, 12 blocks each);
+- head temperature (log-scale of head W and b);
+- a negative bias shift on the 45 pseudo-label classes;
+- interpolation strength (0..2) along the B3 K-FAC kl0.2 removal step.
+
+No distillation-step gene: too costly for the time budget.
+
+Objectives, all minimised and computed on 600 FIT images:
+- f1 = KL_T2(orig on strong views, 2 seeds averaged || model on clean);
+- f2 = KL(orig||model) on mild views;
+- f3 = KL(orig||model) on strong views with a different seed.
+
+Held-out check uses 500 HELD images on the reserved diag views. They are never used in selection.
+
+Pareto front (12 points, from the original at f1 = 1.67 down to f1 = 0.72):
+
+| f1 | f2 mild | f3 strong | held f1 | held KL diag | held clean ce mean/sd | held clean conf | temp | fbias | B3 step |
+|---|---|---|---|---|---|---|---|---|---|
+| 1.673 (orig) | 0 | 0 | 1.098 | 0 | 0.0002/0.001 | 0.9998 | 1.0 | 0 | 0 |
+| 1.276 | 0.022 | 0.043 | 0.876 | 0.014 | 0.0009/0.004 | 0.9991 | 0.86 | 0 | 0 |
+| 0.991 | 0.078 | 0.136 | 0.711 | 0.075 | 0.0030/0.012 | 0.9971 | 0.75 | 0 | 0 |
+| 0.877 | 0.131 | 0.172 | 0.670 | 0.119 | 0.0078/0.034 | 0.9928 | 0.73 | -0.07 | 0 |
+| 0.822 | 0.220 | 0.328 | 0.679 | 0.207 | 0.0218/0.145 | 0.9878 | 0.72 | 0 | 0 |
+| 0.786 | 0.283 | 0.441 | 0.652 | 0.281 | 0.0285/0.254 | 0.9852 | 0.66 | -0.48 | 0.04 |
+| 0.721 | 0.345 | 0.448 | 0.647 | 0.308 | 0.0223/0.134 | 0.9853 | 0.61 | 0 | 0 |
+
+Held-out generalisation: rank correlation 0.85 between fit f1 and held f1, and 0.99 between fit f2 and held KL on diag views. The proxies transfer across images and view families.
+
+Reading:
+- Evolution pushed the head temperature down (soften all logits, 0.6–0.86) and made mixed LayerScale tweaks.
+- It almost always switched off the B3 removal step (alpha about 0) and the forget-class bias shift.
+- Along the front, KL on strong views is at least KL on mild views, and the full-diagnostic check of the picks confirms that clean images are never moved more than generic views.
+  - pick_b0.3 at alpha 1: clean kl 0.209, mild 0.273, strong 0.427, diag 0.318; clean ce 0.032/0.236, conf 0.982, argmax change 0.6%.
+  - pick_b0.1 at alpha 1: clean kl 0.050, mild 0.075, strong 0.132, diag 0.088.
+- The front is essentially a global-softening tradeoff. Pseudo-label agreement on clean stays at 99.4% or more.
+
+Decision B5: **falsified as a selective-forgetting route with these genes.** The selection machinery is sound (held-out transfer) but finds only global calibration. Exported anyway: `B5_pick_b0.1`, `B5_pick_b0.3`.
+
+## Summary / candidates for official scoring
+
+Ranked on the diagnostics, with no score claims:
+1. `B3_kfac_kl02_a10`: the most clean-over-generic selectivity, with a heavy-tailed clean loss.
+2. `B3_kfac_kl05_a05`.
+3. `B5_pick_b0.3`: a global-softening reference.
+
+Also exported: `B4_mlps_b1011_a05`, `B4_mlps_b1011_a10`, `B4_mlps_b6to11_a10`, `B5_pick_b0.1`.
+All exports are in `/p/home/jusers/jacquet2/jureca/ul_out/`. Saved raw state dicts are in `/p/project1/training2666/jacquet2/ul/b345/`.
