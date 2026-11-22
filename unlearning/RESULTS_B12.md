@@ -55,6 +55,17 @@ Run times: p1 took 349 s in total (6 models plus α grid). p2 took about 8 min.
 | p2: adv λ=3, α=0.75 | 0.216/0.546/1.212 | 0.904 | 0.437 | 0.723 | 0.370 | 0.393 | 0.074/0.198/0.103 | |
 | p2: adv λ=3, α=0.5 | 0.053/0.335/0.154 | 0.980 | 0.092 | 0.202 | 0.158 | 0.119 | 0.015/0.127/0.048 | |
 
+| p3 ctrl: frozen RANDOM probes λ=1, α=1 | 0.639/0.710/2.117 | 0.677 | 1.243 | 1.487 | 0.929 | 1.151 | 0.193/0.301/0.218 | n/a |
+| p3 ctrl: random probes λ=1, α=0.75 | 0.255/0.543/1.418 | 0.881 | 0.497 | 0.703 | 0.424 | 0.464 | 0.087/0.218/0.123 | |
+| p3 ctrl: random probes λ=3, α=1 | 3.70/1.24/6.07 | 0.094 | 3.79 | 3.67 | 3.16 | 3.67 | 0.86/0.86/0.86 (collapse) | |
+
+p3 is the non-identity control: the same pipeline, but the probes are frozen and random (weights ×30), so the model flattens arbitrary readouts and not instance identity. At matched strong-view KL it gives the same clean/mild-selective profile:
+- random λ=1, α=0.75: KLs 0.42, KLc 0.50, KLm 0.70, cCE 0.25
+- identity λ=1, α=1: KLs 0.36, KLc 0.51, KLm 0.87, cCE 0.19
+- identity λ=3, α=0.75: KLs 0.37, KLc 0.44, KLm 0.72, cCE 0.22
+
+So the movement comes from "strong-only KL anchor plus a feature-flattening push on mild and strong views", not from the identity objective. **Final B2 decision: falsified as a mechanism.** The models remain usable as generic movers.
+
 p2 (403 s) reproduced p1 λ=1 bit-for-bit. It exported B2_p2_adv_l{1.0,3.0}_a{0.5,0.75,1} to `~/ul_out`.
 
 Run time: 283 s for the whole run (original, adv and control, each with probes).
@@ -64,3 +75,10 @@ Run time: 283 s for the whole run (original, adv and control, each with probes).
 - Fresh probes re-identify 100% of the clean images at every depth.
 - Instance identity can be decoded at about 100% from the original features. Any feature extractor would do the same, so it is not a memorisation signature.
 - The adversarial term does move the model in a way that is somewhat clean/mild-selective: KLc/KLs = 1.41, against about 1.0 for noise-and-heal. It acts as a structured perturbation, not as "losing image #247". It may still be worth an official score as a mover. The α curve is very non-linear, since α=0.5 is almost the original.
+
+## Candidates for official scoring (already exported to `/p/home/jusers/jacquet2/jureca/ul_out/`)
+1. `B2_p2_adv_l1.0_a1`: cCE 0.186, cConf 0.894, clean argmax change 5.3%, KLs 0.36, KLd 0.40
+2. `B2_p2_adv_l1.0_a0.75`: cCE 0.065, cConf 0.968, change 2.1%, KLs 0.17, KLd 0.15 (the milder version)
+3. `B2_p2_adv_l3.0_a0.75`: cCE 0.216, cConf 0.904, change 7.4%, KLs 0.37, KLd 0.39 (heavier clean tail, q95 1.21)
+
+Also exported, but lower priority: `B2_p2_adv_l1.0_a0.5`, `B2_p2_adv_l3.0_a0.5`, `B2_p2_adv_l3.0_a1`. No B1 model was exported, since that branch is falsified.
