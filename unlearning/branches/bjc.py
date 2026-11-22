@@ -22,12 +22,20 @@ def cutmix_u8(u8, seed=123):
     return out
 
 
+def mixup_u8(u8, seed=321):
+    """Independent pseudo-control proxy (never used as an anchor): pixel blend lam*x_i + (1-lam)*x_j, lam~U(.6,.8)."""
+    g = torch.Generator().manual_seed(seed); n = len(u8); perm = torch.randperm(n, generator=g)
+    lam = (0.6 + 0.2 * torch.rand(n, generator=g))[:, None, None, None]
+    return (lam * u8.float() + (1 - lam) * u8[perm].float()).round().clamp(0, 255).to(torch.uint8)
+
+
 class Ctx:
     def __init__(self):
         t0 = time.time(); self.u8 = L.load_images(); self.tc = L.teacher_cache(self.u8)
         self.pl = self.tc["clean_0"].argmax(1)
         self.cm = cutmix_u8(self.u8); orig = L.load_original()
-        self.cm_orig = L.logits(orig, self.cm, "clean"); del orig
+        self.cm_orig = L.logits(orig, self.cm, "clean")
+        self.mx = mixup_u8(self.u8); self.mx_orig = L.logits(orig, self.mx, "clean"); del orig
         self.sd0 = L.original_state(); SAVE.mkdir(parents=True, exist_ok=True)
         print(f"ctx ready {time.time()-t0:.0f}s", flush=True)
 
@@ -36,14 +44,15 @@ def summarize(lgs, ctx, T=2.0):
     """lgs: dict kind -> logits (clean/mild/strong/diag on seed 0, 'cm' on cutmix proxy). Compact metrics."""
     out = {}
     for k, lg in lgs.items():
-        ref = ctx.cm_orig if k == "cm" else ctx.tc[f"{k}_0"]
+        ref = {"cm": ctx.cm_orig, "mx": getattr(ctx, "mx_orig", None)}.get(k)
+        ref = ctx.tc[f"{k}_0"] if ref is None else ref
         p = F.log_softmax(lg / T, 1); q = F.log_softmax(ref / T, 1)
         kl = (q.exp() * (q - p)).sum(1)
         ce_v = F.cross_entropy(lg, ref.argmax(1), reduction="none")          # vs orig argmax on same view
         r = {"kl": round(float(kl.mean()), 4), "agree": round(float((lg.argmax(1) == ref.argmax(1)).float().mean()), 4),
              "ce": round(float(ce_v.mean()), 4), "ce_sd": round(float(ce_v.std()), 4),
              "conf": round(float(F.softmax(lg, 1).max(1).values.mean()), 4), "ncls": int(lg.argmax(1).unique().numel())}
-        if k != "cm":
+        if k not in ("cm", "mx"):
             ce_c = F.cross_entropy(lg, ctx.pl, reduction="none")              # vs CLEAN pseudo-label
             r["ce_clean_pl"] = round(float(ce_c.mean()), 4); r["ce_clean_pl_sd"] = round(float(ce_c.std()), 4)
             r["ce_q05_50_95"] = [round(float(v), 3) for v in torch.quantile(ce_c, torch.tensor([.05, .5, .95]))]
@@ -53,7 +62,7 @@ def summarize(lgs, ctx, T=2.0):
 
 def evaluate(model, ctx, name, extra=None):
     lgs = {k: L.logits(model, ctx.u8, k, 0) for k in ("clean", "mild", "strong", "diag")}
-    lgs["cm"] = L.logits(model, ctx.cm, "clean")
+    lgs["cm"] = L.logits(model, ctx.cm, "clean"); lgs["mx"] = L.logits(model, ctx.mx, "clean")
     d = summarize(lgs, ctx); d.update(extra or {})
     print("DIAG " + name + " " + json.dumps(d), flush=True); return d
 
@@ -70,7 +79,7 @@ def temp_control(ctx, target_clean_ce, name):
             mid = (lo + hi) / 2
             lo, hi = (lo, mid) if f(mid) < target_clean_ce else (mid, hi)
         s = (lo + hi) / 2
-    lgs = {k: ctx.tc[f"{k}_0"] * s for k in ("clean", "mild", "strong", "diag")}; lgs["cm"] = ctx.cm_orig * s
+    lgs = {k: ctx.tc[f"{k}_0"] * s for k in ("clean", "mild", "strong", "diag")}; lgs["cm"] = ctx.cm_orig * s; lgs["mx"] = ctx.mx_orig * s
     d = summarize(lgs, ctx); d["scale"] = round(s, 4)
     print("CTRL " + name + " " + json.dumps(d), flush=True); return d
 
